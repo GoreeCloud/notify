@@ -32,3 +32,22 @@ def test_repository_controls_keep_release_candidate_boundary() -> None:
     assert "release candidate" in specs.lower()
     assert "not automatically production-accepted" in features.lower()
     assert "production acceptance remains false" in notes.lower()
+
+
+def test_repository_identity_metadata_uses_current_canonical_repository() -> None:
+    canonical_repository = "GoreeCloud/notify"
+    canonical_source = "https://github.com/GoreeCloud/notify"
+    legacy_repository = "GoreeCloud/goreecloud-notify"
+
+    manifest = (ROOT / "goreecloud.platform.yaml").read_text(encoding="utf-8")
+    dockerfile = (ROOT / "Dockerfile.production").read_text(encoding="utf-8")
+    release_deployment = (ROOT / "docs" / "release-deployment.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert f"repository: {canonical_repository}" in manifest
+    assert f'org.opencontainers.image.source="{canonical_source}"' in dockerfile
+    assert f"org.opencontainers.image.source={canonical_source}" in release_deployment
+
+    for content in (manifest, dockerfile, release_deployment):
+        assert legacy_repository not in content

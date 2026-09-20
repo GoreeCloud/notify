@@ -4,7 +4,7 @@ component:
   type: application
   id: goreecloud-notify
   product_name: GoreeCloud Notify
-  repository: GoreeCloud/goreecloud-notify
+  repository: GoreeCloud/notify
 
 lifecycle: release-candidate
 version: "0.2.0"

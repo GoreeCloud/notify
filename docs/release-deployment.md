@@ -59,7 +59,7 @@ Required release metadata includes:
 - `org.opencontainers.image.title=GoreeCloud Notify`
 - `org.opencontainers.image.version=0.2.0`
 - `org.opencontainers.image.revision=<exact Git SHA>`
-- `org.opencontainers.image.source=https://github.com/GoreeCloud/goreecloud-notify`
+- `org.opencontainers.image.source=https://github.com/GoreeCloud/notify`
 - `org.opencontainers.image.licenses=MIT`
 
 ## Backup and migration
