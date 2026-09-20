@@ -19,7 +19,7 @@ This checklist distinguishes source-release readiness from production activation
 - [x] Browser/accessibility automation.
 - [x] Glaze UI system/light/dark appearance resilience.
 - [x] Browser preference/storage resilience and stream-stable system-alert state.
-- [x] MIT license applied and included in the production image.
+- [x] Current repository source license is `AGPL-3.0-only` and the production image carries the same OCI license metadata; the published `v0.2.0` release at `dd22a7ad0765c8ca62b401749265594bb0a06e23` retains its historical MIT grant.
 - [x] Release README, changelog, deployment runbook, and dependency-license review.
 - [x] Final integration PR exact-head CI/browser/Production readiness/Monitoring alert readiness green — PR #61 head `b96b23eea57fc6bcb69147ac28671b749b72e38b`.
 - [x] Production-contract stabilization PR #64 exact-head validation green — head `10496ffd961086f46740aec292962c206b743ade`; CI run `31967591068`, Production readiness run `31967591067`, Monitoring alert readiness run `31967591082`.
