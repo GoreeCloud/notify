@@ -60,7 +60,7 @@ Required release metadata includes:
 - `org.opencontainers.image.version=0.2.0`
 - `org.opencontainers.image.revision=<exact Git SHA>`
 - `org.opencontainers.image.source=https://github.com/GoreeCloud/notify`
-- `org.opencontainers.image.licenses=MIT`
+- `org.opencontainers.image.licenses=AGPL-3.0-only`
 
 ## Backup and migration
 
