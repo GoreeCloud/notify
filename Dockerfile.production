@@ -16,7 +16,7 @@ ARG GOREECLOUD_NOTIFY_BUILD_REVISION=development
 LABEL org.opencontainers.image.title="GoreeCloud Notify" \
       org.opencontainers.image.version="0.2.0" \
       org.opencontainers.image.revision="${GOREECLOUD_NOTIFY_BUILD_REVISION}" \
-      org.opencontainers.image.source="https://github.com/GoreeCloud/goreecloud-notify" \
+      org.opencontainers.image.source="https://github.com/GoreeCloud/notify" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
