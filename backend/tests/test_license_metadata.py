@@ -38,3 +38,20 @@ def test_current_source_license_metadata_is_synchronized() -> None:
 
     assert '"$ROOT/usr/share/doc/goreecloud-notify/LICENSE"' in debian_packaging
     assert '"$ROOT/usr/share/doc/goreecloud-notify/LICENSE-NOTICE.md"' in debian_packaging
+
+
+
+def test_release_controls_distinguish_current_agpl_from_historical_mit() -> None:
+    release_deployment = _read("docs/release-deployment.md")
+    release_checklist = _read("docs/release-checklist.md")
+    changelog = _read("CHANGELOG.md")
+
+    assert "org.opencontainers.image.licenses=AGPL-3.0-only" in release_deployment
+    assert "org.opencontainers.image.licenses=MIT" not in release_deployment
+
+    assert "Current repository source license is `AGPL-3.0-only`" in release_checklist
+    assert V020_COMMIT in release_checklist
+    assert "historical MIT grant" in release_checklist
+
+    # Historical v0.2.0 release metadata remains intentionally MIT.
+    assert "MIT application license and OCI source/version/license metadata." in changelog
