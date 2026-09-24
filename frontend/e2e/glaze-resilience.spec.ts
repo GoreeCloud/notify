@@ -89,12 +89,12 @@ test('blocked browser preference storage does not prevent Notify from opening', 
   await expect(page.getByText('One calm place for operational and GoreeCloud application notifications')).toBeVisible()
 })
 
-test('Notify applies its Glaze UI 1.5.1 presentation-only source contract', async ({ page }) => {
+test('Notify applies its Glaze UI 1.6.0 presentation-only source contract', async ({ page }) => {
   await mockSignedOut(page)
   await page.goto('/')
 
-  await expect(page.locator('html')).toHaveAttribute('data-glaze-ui', '1.5.1')
-  await expect(page.locator('html')).toHaveAttribute('data-glaze-ui-target', '1.5.1')
+  await expect(page.locator('html')).toHaveAttribute('data-glaze-ui', '1.6.0')
+  await expect(page.locator('html')).toHaveAttribute('data-glaze-ui-target', '1.6.0')
   await expect(page.locator('html')).toHaveAttribute('data-glaze-ui-status', 'source-adoption-candidate')
   await expect(page.locator('html')).toHaveAttribute('data-glaze-authority', 'presentation-only')
   await expect(page.locator('html')).toHaveAttribute('data-glaze-service', 'available')
@@ -125,7 +125,7 @@ test('Notify applies its Glaze UI 1.5.1 presentation-only source contract', asyn
   expect(contract.materialClarity).toBe('balanced')
   expect(['220ms', '.22s']).toContain(contract.motionStandard)
   expect(contract.radiusControl).toBe('16px')
-  expect(contract.version).toBe('"1.5.1"')
+  expect(contract.version).toBe('"1.6.0"')
   expect(['single', 'stacked', 'split']).toContain(contract.paneMode)
   expect(['permission-required', 'restricted', 'unsupported', 'disabled', 'available']).toContain(contract.systemAlerts)
   expect(contract.buttonHeight).toBeGreaterThanOrEqual(48)
