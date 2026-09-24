@@ -129,8 +129,8 @@ test('Notify applies its Glaze UI 1.6.0 presentation-only source contract', asyn
   expect(['single', 'stacked', 'split']).toContain(contract.paneMode)
   expect(['permission-required', 'restricted', 'unsupported', 'disabled', 'available']).toContain(contract.systemAlerts)
   expect(contract.buttonHeight).toBeGreaterThanOrEqual(48)
-  expect(contract.reviewedAnchor).toBe('ee1032a0822ab8e103f8afe48e5c1859fde65cc9')
-  expect(contract.qualificationAnchor).toBe('5b59d0e36950d737dba35b58ae58058684e0831b')
+  expect(contract.reviewedAnchor).toBe('a7180679ea851389e0f3004515f9a25f420e716d')
+  expect(contract.qualificationAnchor).toBe('c7509c79256b04b0aa67cb9dd0737d7588e0ae4a')
 })
 
 test('Glaze UI accessibility precedence reduces motion without granting operational authority', async ({ page }) => {
