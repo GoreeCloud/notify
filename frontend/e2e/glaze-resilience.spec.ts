@@ -89,12 +89,12 @@ test('blocked browser preference storage does not prevent Notify from opening', 
   await expect(page.getByText('One calm place for operational and GoreeCloud application notifications')).toBeVisible()
 })
 
-test('Notify applies its Glaze UI 1.5.1 presentation-only source contract', async ({ page }) => {
+test('Notify applies its Glaze UI 1.6.0 presentation-only source contract', async ({ page }) => {
   await mockSignedOut(page)
   await page.goto('/')
 
-  await expect(page.locator('html')).toHaveAttribute('data-glaze-ui', '1.5.1')
-  await expect(page.locator('html')).toHaveAttribute('data-glaze-ui-target', '1.5.1')
+  await expect(page.locator('html')).toHaveAttribute('data-glaze-ui', '1.6.0')
+  await expect(page.locator('html')).toHaveAttribute('data-glaze-ui-target', '1.6.0')
   await expect(page.locator('html')).toHaveAttribute('data-glaze-ui-status', 'source-adoption-candidate')
   await expect(page.locator('html')).toHaveAttribute('data-glaze-authority', 'presentation-only')
   await expect(page.locator('html')).toHaveAttribute('data-glaze-service', 'available')
@@ -125,12 +125,12 @@ test('Notify applies its Glaze UI 1.5.1 presentation-only source contract', asyn
   expect(contract.materialClarity).toBe('balanced')
   expect(['220ms', '.22s']).toContain(contract.motionStandard)
   expect(contract.radiusControl).toBe('16px')
-  expect(contract.version).toBe('"1.5.1"')
+  expect(contract.version).toBe('"1.6.0"')
   expect(['single', 'stacked', 'split']).toContain(contract.paneMode)
   expect(['permission-required', 'restricted', 'unsupported', 'disabled', 'available']).toContain(contract.systemAlerts)
   expect(contract.buttonHeight).toBeGreaterThanOrEqual(48)
-  expect(contract.reviewedAnchor).toBe('ee1032a0822ab8e103f8afe48e5c1859fde65cc9')
-  expect(contract.qualificationAnchor).toBe('5b59d0e36950d737dba35b58ae58058684e0831b')
+  expect(contract.reviewedAnchor).toBe('a7180679ea851389e0f3004515f9a25f420e716d')
+  expect(contract.qualificationAnchor).toBe('c7509c79256b04b0aa67cb9dd0737d7588e0ae4a')
 })
 
 test('Glaze UI accessibility precedence reduces motion without granting operational authority', async ({ page }) => {

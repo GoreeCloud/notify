@@ -2,6 +2,16 @@
 
 All notable source releases of GoreeCloud Notify are recorded here. Detailed operational history remains in the authoritative GoreeCloud change-log records.
 
+## September 24, 2026 — Glaze UI 1.6.0 web and Flutter source-adoption stabilization
+
+- Repinned Notify's web, Flutter Linux, and Flutter Android presentation contracts from Glaze UI 1.5.1 to current Official Stable Glaze UI 1.6.0.
+- Bound the active adoption record to immutable tag `v1.6.0`, accepted release source `a7180679ea851389e0f3004515f9a25f420e716d`, qualification source `c7509c79256b04b0aa67cb9dd0737d7588e0ae4a`, GitHub release `392095913`, and release artifact SHA-256 `687268b5eb76917eccae9d935ffa1bead333d5dee50b6098e996a3f44cee50af`.
+- Preserved presentation-only authority: Glaze does not grant notification permission, infer service/security/privacy/policy truth, choose provider precedence, navigate automatically, or execute recovery/consequential actions.
+- Reconciled Platform Contract 0.4, web bootstrap/E2E coverage, Flutter identity tests, historical Glaze records, and current feature/planning records to the 1.6.0 source mapping.
+- Notify remains nonconformant and not production-eligible until representative browser/native accessibility, semantic-state/recovery, Android device/background-delivery, performance, rollback, consumer-registry, platform-system, production, and later Stable gates pass.
+
+---
+
 ## Unreleased
 
 ### Changed

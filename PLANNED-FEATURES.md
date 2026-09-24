@@ -7,11 +7,11 @@
 
 ## Current high-priority obligations
 
-### Glaze UI 1.6.0 reconciliation
+### Glaze UI 1.6.0 downstream acceptance
 
 **Tracking:** #101
 
-- Move the verified web and Flutter Glaze UI 1.5.1 source-adoption candidate to current shared Stable Glaze UI V1.6 / 1.6.0.
+- Complete application-specific acceptance of the implemented web and Flutter Glaze UI 1.6.0 source-adoption candidate against the current shared Stable release.
 - Preserve presentation-only authority and fail closed on unsupported capability/context mappings.
 - Re-run exact-head browser/native/accessibility/rollback and Platform Contract validation.
 - Keep representative device/performance, consumer acceptance, production deployment, release, and Stable qualification separately gated.

@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-/// GoreeCloud Notify native consumer mapping for Glaze UI 1.5.1.
+/// GoreeCloud Notify native consumer mapping for Glaze UI 1.6.0.
 ///
 /// This is a repository-local source adoption candidate, not a completed
 /// conformance or production claim. Presentation resolves only from bounded
@@ -18,11 +18,11 @@ enum GlazeMaterialRole {
 }
 
 abstract final class GlazeTokens {
-  static const String stableVersion = '1.5.1';
+  static const String stableVersion = '1.6.0';
   static const String reviewedImplementationAnchor =
-      'ee1032a0822ab8e103f8afe48e5c1859fde65cc9';
+      'a7180679ea851389e0f3004515f9a25f420e716d';
   static const String sourceQualificationAnchor =
-      '5b59d0e36950d737dba35b58ae58058684e0831b';
+      'c7509c79256b04b0aa67cb9dd0737d7588e0ae4a';
 
   static const double radiusSmall = 12;
   static const double radiusMedium = 16;
@@ -31,7 +31,7 @@ abstract final class GlazeTokens {
   static const double radiusXLarge = 30;
   static const double radiusPill = 999;
 
-  // V1.5.1 preserves the accepted ergonomic target floors.
+  // V1.6.0 preserves the accepted ergonomic target floors while extending semantic state/recovery governance.
   static const double targetMin = 48;
   static const double targetComfortable = 48;
   static const double targetTouchAssistance = 56;

@@ -1,6 +1,6 @@
 :root {
-  /* GoreeCloud Notify — Glaze UI 1.5.1 Context + Capability consumer mapping. */
-  --glaze-ui-version: "1.5.1";
+  /* GoreeCloud Notify — Glaze UI 1.6.0 Context + Capability consumer mapping. */
+  --glaze-ui-version: "1.6.0";
   --glaze-canvas: var(--bg);
   --glaze-canvas-accent: var(--bg-strong);
   --glaze-surface: var(--panel);
@@ -31,7 +31,7 @@
   --glaze-space-12: 48px;
   --glaze-space-16: 64px;
 
-  /* V1.5.1 preserves the accepted ergonomic target floors. */
+  /* V1.6.0 preserves the accepted ergonomic target floors. */
   --glaze-target-min: 48px;
   --glaze-target-comfortable: 48px;
   --glaze-target-touch-assistance: 56px;
@@ -58,7 +58,7 @@
   --glaze-density-compact-gap: 12px;
   --glaze-density-far-view-gap: 28px;
 
-  /* V1.5.1 presentation resolution. These values are driven only by bounded
+  /* V1.6.0 presentation resolution. These values are driven only by bounded
      application/runtime/accessibility truth from useGlazePresentation. */
   --glaze-context-pane-mode: split;
   --glaze-context-control-density: standard;

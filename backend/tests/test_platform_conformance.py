@@ -29,11 +29,11 @@ def test_platform_conformance_contract_is_fail_closed() -> None:
         "goreecloud_observability",
     }
     glaze = contract["platform_systems"]["glaze_ui"]
-    assert glaze["required_version"] == "1.5"
-    assert glaze["required_release"] == "1.5.1"
-    assert glaze["canonical_repository"] == "GoreeCloud/goreecloud-glaze-ui"
-    assert glaze["canonical_revision"] == "5b59d0e36950d737dba35b58ae58058684e0831b"
-    assert glaze["source_status"] == "v1.5.1-source-adoption-candidate-acceptance-required"
+    assert glaze["required_version"] == "1.6"
+    assert glaze["required_release"] == "1.6.0"
+    assert glaze["canonical_repository"] == "GoreeCloud/glaze-ui"
+    assert glaze["canonical_revision"] == "a7180679ea851389e0f3004515f9a25f420e716d"
+    assert glaze["source_status"] == "v1.6.0-source-adoption-candidate-acceptance-required"
 
 
 def test_root_platform_manifest_tracks_current_contract() -> None:
@@ -44,8 +44,8 @@ def test_root_platform_manifest_tracks_current_contract() -> None:
         "id: goreecloud-notify",
         "lifecycle: release-candidate",
         'platform_contract: "0.4"',
-        'glaze_ui_required: "1.5.1"',
-        'version: "1.5.1"',
+        'glaze_ui_required: "1.6.0"',
+        'version: "1.6.0"',
         "status: nonconformant",
     ):
         assert expected in manifest

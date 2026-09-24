@@ -151,6 +151,6 @@
     "17_rollback_and_production_approval",
     "18_central_consumer_registry"
   ],
-  "acceptance_boundary": "Historical repository-local Glaze UI 1.3.0 source-mapping evidence only. Current Stable consumer target is 1.5.1. This record does not establish current conformance, production eligibility, or a valid current target.",
-  "superseded_by": "docs/glaze-ui-v1.5.1-adoption.json"
+  "acceptance_boundary": "Historical repository-local Glaze UI 1.3.0 source-mapping evidence only. Current Stable consumer target is 1.6.0. This record does not establish current conformance, production eligibility, or a valid current target.",
+  "superseded_by": "docs/glaze-ui-v1.6.0-adoption.json"
 }

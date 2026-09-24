@@ -7,7 +7,7 @@ import {
   resolveNotifyGlazePresentation,
   type NotifyGlazeServiceState,
   type NotifyGlazeStreamState,
-} from './glaze-v1.5.1'
+} from './glaze-v1.6.0'
 
 type HookOptions = {
   serviceState: NotifyGlazeServiceState
