@@ -45,7 +45,7 @@ def test_v1_3_current_source_mapping_is_superseded_by_v1_6_0() -> None:
     assert "stableVersion = '1.3.0'" not in dart
 
 
-def test_v1_3_ergonomic_and_resilience_foundation_is_preserved_in_v1_5_1_source() -> None:
+def test_v1_3_ergonomic_and_resilience_foundation_is_preserved_in_v1_6_0_source() -> None:
     css = _read("frontend/src/glaze-contract.css")
     dart = _read("client/lib/glaze_theme.dart")
     for token in (
