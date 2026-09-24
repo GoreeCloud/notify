@@ -50,3 +50,18 @@ def test_historical_v1_3_ledger_is_explicitly_superseded() -> None:
     assert historical["adoption_status"] == "historical-source-mapping-superseded"
     assert historical["superseded_by"] == "docs/glaze-ui-v1.6.0-adoption.json"
     assert historical["stable_eligible"] is False
+
+
+def test_v1_5_1_remains_explicit_historical_rollback_provenance() -> None:
+    historical = json.loads(
+        (ROOT / "docs" / "glaze-ui-v1.5.1-adoption.json").read_text(encoding="utf-8")
+    )
+    assert historical["application"] == "goreecloud-notify"
+    assert historical["required_target_release"] == "1.5.1"
+    assert historical["current_source_mapping_release"] == "1.5.1"
+    assert historical["runtime_entrypoint"] == "js/glaze-v1.5.1.mjs"
+    assert historical["adoption_status"] == "historical-source-mapping-superseded"
+    assert historical["superseded_by"] == "docs/glaze-ui-v1.6.0-adoption.json"
+    assert "rollback and audit" in historical["acceptance_boundary"]
+    assert historical["conformance_claim"] is False
+    assert historical["production_eligible"] is False
