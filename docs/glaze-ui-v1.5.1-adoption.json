@@ -9,7 +9,7 @@
   "reviewed_implementation_anchor": "ee1032a0822ab8e103f8afe48e5c1859fde65cc9",
   "source_qualification_anchor": "5b59d0e36950d737dba35b58ae58058684e0831b",
   "runtime_entrypoint": "js/glaze-v1.5.1.mjs",
-  "adoption_status": "source-adoption-candidate",
+  "adoption_status": "historical-source-mapping-superseded",
   "conformance_claim": false,
   "production_eligible": false,
   "supported_surfaces": [
@@ -76,5 +76,7 @@
       ],
       "notes": "Glaze is presentation-only; authorization, permission, service, privacy, security, identity, and policy truth are not manufactured."
     }
-  }
+  },
+  "superseded_by": "docs/glaze-ui-v1.6.0-adoption.json",
+  "acceptance_boundary": "Historical Notify Glaze UI 1.5.1 source-adoption evidence retained for rollback and audit. Current shared Stable consumer target and active repository-local source mapping are 1.6.0; this record does not establish current conformance or production eligibility."
 }
