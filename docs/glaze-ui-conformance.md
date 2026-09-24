@@ -1,18 +1,18 @@
-# GoreeCloud Notify — Glaze UI 1.5.1 consumer adoption and conformance record
+# GoreeCloud Notify — Glaze UI 1.6.0 consumer adoption and conformance record
 
 ## Current required target
 
-The current official Stable GoreeCloud design-system target is **Glaze UI 1.5.1**.
+The current official Stable GoreeCloud design-system target is **Glaze UI 1.6.0**.
 
-Shared Stable authority is defined by the canonical `GoreeCloud/goreecloud-glaze-ui` records including `contracts/v1.5.1/stable-scope.json`, `acceptance/v1.5.1-stable.md`, and `GLAZE_UI_V1_5.md`.
+Shared Stable authority is defined by the canonical `GoreeCloud/glaze-ui` records including `contracts/v1.6/stable-release.json`, `acceptance/v1.6-stable.json`, and the immutable `v1.6.0` release.
 
-The reviewed V1.5 implementation anchor is `ee1032a0822ab8e103f8afe48e5c1859fde65cc9`. The V1.5.1 source-qualification anchor is `5b59d0e36950d737dba35b58ae58058684e0831b`.
+The accepted V1.6.0 release source is `a7180679ea851389e0f3004515f9a25f420e716d`. The V1.6 source-qualification anchor is `c7509c79256b04b0aa67cb9dd0737d7588e0ae4a`; the published source/runtime archive SHA-256 is `687268b5eb76917eccae9d935ffa1bead333d5dee50b6098e996a3f44cee50af`.
 
 Shared Stable status does not certify GoreeCloud Notify. Notify requires its own exact-revision implementation and acceptance for every supported user-facing surface.
 
 ## Current Notify source state
 
-Notify now carries a repository-local **Glaze UI 1.5.1 source adoption candidate** for:
+Notify now carries a repository-local **Glaze UI 1.6.0 source adoption candidate** for:
 
 - web;
 - Flutter Linux;
@@ -35,11 +35,11 @@ The web client now resolves bounded presentation from actual application/runtime
 
 The resolver does not grant browser permission, authenticate users, change server state, execute fallback actions, or infer authorization. Browser notification permission is still requested only by the existing explicit user action.
 
-The web source records the exact 1.5.1 shared anchors and exposes presentation/capability state through bounded document data attributes consumed by the repository-local CSS. Raw notification content and provider identity are not added to Glaze diagnostics or presentation metadata.
+The web source records the exact 1.6.0 shared release/source anchors and exposes presentation/capability state through bounded document data attributes consumed by the repository-local CSS. Raw notification content and provider identity are not added to Glaze diagnostics or presentation metadata.
 
 ## Flutter Linux and Android mapping
 
-The Flutter client now identifies Glaze UI 1.5.1 and binds the same reviewed/shared qualification anchors.
+The Flutter client now identifies Glaze UI 1.6.0 and binds the same accepted-release/shared qualification anchors.
 
 Native presentation resolution uses Flutter `MediaQuery` state for:
 
@@ -82,7 +82,7 @@ Automated browser/native source evidence does not substitute for representative 
 
 ## Platform-system boundary
 
-The root `goreecloud.platform.yaml` uses Platform Contract 0.4 and declares all nine Integral Platform Systems. Glaze UI remains `applicable-migration-required` until application-specific acceptance is complete.
+The root `goreecloud.platform.yaml` uses Platform Contract 0.4 and declares all nine Integral Platform Systems. Glaze UI is `applicable-blocked`: source migration is present, while application-specific acceptance remains incomplete.
 
 Other blocked platform systems remain independent blockers. Source adoption of Glaze UI does not satisfy Manager, Privacy Shield, Wardveil Security, Everkeep, Mesh, Identity, Policy, or Observability acceptance.
 
