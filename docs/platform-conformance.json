@@ -5,15 +5,15 @@
   "platform_systems": {
     "glaze_ui": {
       "identity": "Glaze UI",
-      "required_version": "1.5",
-      "required_release": "1.5.1",
-      "canonical_repository": "GoreeCloud/goreecloud-glaze-ui",
-      "canonical_revision": "5b59d0e36950d737dba35b58ae58058684e0831b",
-      "source_status": "v1.5.1-source-adoption-candidate-acceptance-required",
+      "required_version": "1.6",
+      "required_release": "1.6.0",
+      "canonical_repository": "GoreeCloud/glaze-ui",
+      "canonical_revision": "a7180679ea851389e0f3004515f9a25f420e716d",
+      "source_status": "v1.6.0-source-adoption-candidate-acceptance-required",
       "evidence": [
-        "docs/glaze-ui-v1.5.1-adoption.json",
+        "docs/glaze-ui-v1.6.0-adoption.json",
         "docs/glaze-ui-conformance.md",
-        "frontend/src/glaze-v1.5.1.ts",
+        "frontend/src/glaze-v1.6.0.ts",
         "frontend/src/useGlazePresentation.ts",
         "frontend/src/glaze-contract.css",
         "frontend/src/main.tsx",
@@ -22,8 +22,9 @@
         "client/lib/glaze_theme.dart",
         "client/lib/main.dart"
       ],
-      "blocker": "Glaze UI 1.5.1 source adoption is present, but representative browser/native accessibility, physical-device, application-performance, rollback, governed consumer-registry, and production acceptance remain required.",
-      "shared_reviewed_implementation_anchor": "ee1032a0822ab8e103f8afe48e5c1859fde65cc9"
+      "blocker": "Glaze UI 1.6.0 source adoption is present, but representative browser/native accessibility, semantic-state/recovery, physical-device, application-performance, rollback, governed consumer-registry, and production acceptance remain required.",
+      "shared_accepted_release_source": "a7180679ea851389e0f3004515f9a25f420e716d",
+      "shared_source_qualification_anchor": "c7509c79256b04b0aa67cb9dd0737d7588e0ae4a"
     },
     "wardveil_security": {
       "identity": "Wardveil Security by GoreeCloud",
@@ -106,7 +107,7 @@
     }
   },
   "production_blockers": [
-    "Glaze UI 1.5.1 representative browser/native accessibility, physical-device, application-performance, rollback, governed consumer-registry, and production acceptance",
+    "Glaze UI 1.6.0 representative browser/native accessibility, semantic-state/recovery, physical-device, application-performance, rollback, governed consumer-registry, and production acceptance",
     "Wardveil Security target runtime acceptance",
     "Privacy Shield runtime and central adapter acceptance",
     "Everkeep target-native restore/recovery and exact-revision acceptance",
@@ -127,6 +128,6 @@
     "validator_repository": "GoreeCloud/GoreeCloud",
     "validator_revision": "6cb150d512647a0401b4da9e4741d7591693dee0",
     "nine_system_model": true,
-    "current_glaze_ui_required": "1.5.1"
+    "current_glaze_ui_required": "1.6.0"
   }
 }
