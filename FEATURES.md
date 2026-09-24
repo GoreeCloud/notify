@@ -7,7 +7,7 @@
 
 ## Purpose
 
-This file records functionality that is present in the current GoreeCloud Notify source line. Planned or recommended work belongs in `FEATURE-ROADMAP.md`.
+This file is the product capability overview. Evidence-backed implementation authority lives in `IMPLEMENTED-FEATURES.md`, while planned or recommended work belongs in `PLANNED-FEATURES.md`.
 
 A feature listed here is not automatically production-accepted.
 
