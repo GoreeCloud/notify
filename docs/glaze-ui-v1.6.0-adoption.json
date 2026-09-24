@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "application": "goreecloud-notify",
+  "required_target_release": "1.6.0",
+  "current_source_mapping_release": "1.6.0",
+  "canonical_repository": "GoreeCloud/glaze-ui",
+  "release_tag": "v1.6.0",
+  "github_release_id": 392095913,
+  "accepted_release_source": "a7180679ea851389e0f3004515f9a25f420e716d",
+  "accepted_release_tree": "9ff0bf7a5f9d64f109d99bf4b76b81bd2a162268",
+  "source_qualification_anchor": "c7509c79256b04b0aa67cb9dd0737d7588e0ae4a",
+  "qualification_evidence_integration_commit": "354f5759385c28596fcfec26a3ad525e89fb1c35",
+  "publication_control_commit": "7e8b537b9d1a123bc3e92679774a4d9cc704e03b",
+  "release_artifact_sha256": "687268b5eb76917eccae9d935ffa1bead333d5dee50b6098e996a3f44cee50af",
+  "runtime_entrypoint": "js/glaze-v1.6.0.mjs",
+  "shared_consumer_eligible": true,
+  "adoption_status": "source-adoption-candidate",
+  "conformance_claim": false,
+  "production_eligible": false,
+  "supported_surfaces": [
+    "web",
+    "flutter-linux",
+    "flutter-android"
+  ],
+  "required_acceptance": [
+    "substantive-v1.6.0-web-source-adoption",
+    "substantive-v1.6.0-flutter-linux-source-adoption",
+    "substantive-v1.6.0-flutter-android-source-adoption",
+    "semantic-state-recovery-and-capability-truth-boundary",
+    "accessibility-precedence-and-reduced-effect-fallbacks",
+    "representative-browser-os-accessibility",
+    "representative-native-accessibility",
+    "large-text-reflow-contrast-and-forced-colors",
+    "representative-application-performance-budget",
+    "android-device-and-posture-acceptance-where-applicable",
+    "visual-excellence-review",
+    "rollback-validation",
+    "governed-consumer-registry-acceptance",
+    "exact-revision-production-approval"
+  ],
+  "blockers": [
+    "Representative browser/OS manual accessibility, semantic-state/recovery, and visual acceptance for the exact 1.6.0 Notify candidate is not yet recorded.",
+    "Representative Flutter Linux native accessibility and performance acceptance is not yet recorded.",
+    "Representative Android physical-device, accessibility, posture/rotation where applicable, background-delivery, and production-signing acceptance is not yet recorded.",
+    "Application-specific performance-budget evidence for the exact Notify candidate is not yet recorded.",
+    "Known-good application rollback validation and governed Glaze consumer-registry acceptance are not yet recorded.",
+    "Exact-revision production approval is not present."
+  ],
+  "source_implementation": {
+    "web": {
+      "status": "source-evidence-present-acceptance-required",
+      "evidence": [
+        "frontend/src/glaze-v1.6.0.ts",
+        "frontend/src/useGlazePresentation.ts",
+        "frontend/src/glaze-contract.css",
+        "frontend/src/main.tsx",
+        "frontend/index.html",
+        "frontend/e2e/glaze-resilience.spec.ts"
+      ]
+    },
+    "flutter_linux": {
+      "status": "source-evidence-present-native-acceptance-required",
+      "evidence": [
+        "client/lib/glaze_theme.dart",
+        "client/lib/main.dart"
+      ]
+    },
+    "flutter_android": {
+      "status": "source-evidence-present-device-acceptance-required",
+      "evidence": [
+        "client/lib/glaze_theme.dart",
+        "client/lib/main.dart",
+        "client/lib/persistent_alerts.dart"
+      ]
+    },
+    "authority_boundary": {
+      "status": "source-evidence-present",
+      "evidence": [
+        "frontend/src/glaze-v1.6.0.ts",
+        "client/lib/glaze_theme.dart"
+      ],
+      "notes": "Glaze is presentation-only; authorization, permission, service, privacy, security, identity, policy, provider precedence, and capability truth are not manufactured."
+    }
+  }
+}
