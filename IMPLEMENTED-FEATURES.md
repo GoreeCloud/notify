@@ -27,16 +27,16 @@ This file records capabilities verified in the current source line. It does not 
 - Search, filtering, cursor pagination, subscription, and preference workflows.
 - System/Light/Dark presentation.
 - Browser system-alert integration with explicit opt-in and generic redacted operating-system content.
-- Responsive Glaze UI **1.5.1 source-adoption candidate** with browser/accessibility automation.
+- Responsive Glaze UI **1.6.0 source-adoption candidate** with browser/accessibility automation.
 - Reduced Motion, Reduced Transparency, contrast, and Forced Colors presentation handling.
-- Current source remains a 1.5.1 adoption candidate; current shared Stable Glaze UI 1.6.0 reconciliation is tracked separately and is not claimed here.
+- Current source carries the repository-local 1.6.0 adoption candidate bound to the immutable shared Stable release; downstream Notify acceptance remains separately gated.
 
 ## Native clients
 
 - Flutter Linux and Android client source.
 - Secure local session storage.
 - Android persistent/system alert capability flow.
-- Glaze UI **1.5.1 native source-adoption candidate**.
+- Glaze UI **1.6.0 native source-adoption candidate**.
 - Native accessibility/context presentation mapping.
 - Linux and Android CI build/test coverage.
 
@@ -57,7 +57,7 @@ This file records capabilities verified in the current source line. It does not 
 
 The following are not implemented production acceptance claims and remain controlled by `PLANNED-FEATURES.md` and the linked GitHub issues:
 
-- current Glaze UI 1.6.0 repository-local adoption and downstream acceptance;
+- current Glaze UI 1.6.0 downstream browser/native/device/performance/rollback/consumer-registry acceptance;
 - live VPS activation and final private Gateway/DNS/NetBird publication;
 - target backup/restore evidence;
 - accepted GoreeCloud Monitor deployment and independent out-of-band Notify-down delivery;
