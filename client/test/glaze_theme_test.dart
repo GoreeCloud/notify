@@ -3,15 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:goreecloud_notify_client/glaze_theme.dart';
 
 void main() {
-  test('Glaze UI 1.5.1 identity and authority anchors are exact', () {
-    expect(GlazeTokens.stableVersion, '1.5.1');
+  test('Glaze UI 1.6.0 identity and authority anchors are exact', () {
+    expect(GlazeTokens.stableVersion, '1.6.0');
     expect(
       GlazeTokens.reviewedImplementationAnchor,
-      'ee1032a0822ab8e103f8afe48e5c1859fde65cc9',
+      'a7180679ea851389e0f3004515f9a25f420e716d',
     );
     expect(
       GlazeTokens.sourceQualificationAnchor,
-      '5b59d0e36950d737dba35b58ae58058684e0831b',
+      'c7509c79256b04b0aa67cb9dd0737d7588e0ae4a',
     );
   });
 
