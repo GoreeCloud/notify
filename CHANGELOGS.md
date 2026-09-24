@@ -6,6 +6,7 @@ All notable source releases of GoreeCloud Notify are recorded here. Detailed ope
 
 ### Changed
 
+- Migrated repository feature lifecycle authority to `IMPLEMENTED-FEATURES.md` and `PLANNED-FEATURES.md`, renamed the live repository changelog authority to `CHANGELOGS.md`, and retired the legacy synchronized roadmap/changelog model without changing Notify runtime or production acceptance.
 - Recorded Glaze UI 1.0.0 as the web application's explicit design-system target and added an application-level semantic contract for shared target sizing, focus, motion, radii, semantic roles, and adaptive ranges.
 - Aligned the primary responsive transformations with Glaze UI Compact, Medium, Expanded, and Wide ranges while preserving Notify's established notification-focused composition.
 - Replaced stale development-milestone presentation with release-aware version, stage, immutable build-revision, and production-acceptance status from `/api/v1/meta`.

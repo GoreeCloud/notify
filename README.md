@@ -8,7 +8,7 @@ The application combines a FastAPI backend, SQLite persistence, a React/TypeScri
 
 The current source line is a **release candidate**. Source-level CI, browser/accessibility validation, production-runtime readiness, monitoring-readiness, backup/restore tooling, security hardening, and target-preflight tooling are implemented and validated.
 
-It is deployable to an approved GoreeCloud target, but production activation is intentionally separate from source readiness. ntfy is no longer running on the VPS. The `notify.goreecloud.com` identity remains reserved for GoreeCloud Notify and must not be treated as production-ready until target backup/restore, independent monitoring/out-of-band alerting, private Caddy/NetBird/DNS validation, current Glaze UI 1.5.1 adoption, nine-system platform evaluation, and final manual browser/OS/native acceptance are recorded.
+It is deployable to an approved GoreeCloud target, but production activation is intentionally separate from source readiness. ntfy is no longer running on the VPS. The `notify.goreecloud.com` identity remains reserved for GoreeCloud Notify and must not be treated as production-ready until target backup/restore, independent monitoring/out-of-band alerting, private Caddy/NetBird/DNS validation, current Stable Glaze UI 1.6.0 adoption and Notify-specific acceptance, nine-system platform evaluation, and final manual browser/OS/native acceptance are recorded.
 
 ## Core capabilities
 
@@ -61,6 +61,9 @@ The application does not require a public backend host port. The intended produc
 ├── docker-compose.yml             Development topology
 ├── docker-compose.production.yml  Production runtime contract
 ├── Dockerfile.production          Reproducible multi-stage production image
+├── IMPLEMENTED-FEATURES.md       Evidence-backed implemented feature authority
+├── PLANNED-FEATURES.md            Planned feature and acceptance authority
+├── CHANGELOGS.md                  Repository change-history authority
 ├── LICENSE                        AGPL-3.0-only license grant
 ├── LICENSE-NOTICE.md              Prior MIT grants and third-party licensing boundary
 └── .github/workflows/             CI, browser, production-readiness, and monitoring-readiness gates
@@ -226,7 +229,7 @@ See `SECURITY.md` and `docs/security.md`.
 
 Source readiness is not the same as production activation. Before GoreeCloud Notify can become the production notification service, GoreeCloud still requires:
 
-1. current Stable Glaze UI **1.5.1** repository-local adoption and representative web/Linux/Android acceptance;
+1. current Stable Glaze UI **1.6.0** repository-local adoption and representative web/Linux/Android acceptance; current source remains a verified 1.5.1 adoption candidate until #101 is completed;
 2. explicit evaluation of all nine Integral Platform Systems, with unsupported or unaccepted systems remaining fail-closed rather than implied complete;
 3. manual keyboard, screen-reader, zoom/reflow, browser-permission, real OS notification, native-client, and practical multi-tab acceptance;
 4. target backup repository/schedule/retention plus a successful recorded target restore;

@@ -6,7 +6,9 @@ MANDATORY_ROOT_CONTROLS = [
     "README.md",
     "SPECIFICATIONS.md",
     "FEATURES.md",
-    "FEATURE-ROADMAP.md",
+    "IMPLEMENTED-FEATURES.md",
+    "PLANNED-FEATURES.md",
+    "CHANGELOGS.md",
     "BENEFITS.md",
     "COMPETITIVE-OBJECTIVES.md",
     "BRANDING.md",
@@ -23,6 +25,12 @@ MANDATORY_ROOT_CONTROLS = [
 def test_mandatory_repository_controls_exist() -> None:
     missing = [name for name in MANDATORY_ROOT_CONTROLS if not (ROOT / name).is_file()]
     assert missing == []
+
+
+def test_retired_feature_and_changelog_controls_are_absent() -> None:
+    retired = ["FEATURE-ROADMAP.md", "CHANGELOG.md"]
+    present = [name for name in retired if (ROOT / name).exists()]
+    assert present == []
 
 
 def test_repository_controls_keep_release_candidate_boundary() -> None:
