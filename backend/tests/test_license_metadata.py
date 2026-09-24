@@ -44,7 +44,7 @@ def test_current_source_license_metadata_is_synchronized() -> None:
 def test_release_controls_distinguish_current_agpl_from_historical_mit() -> None:
     release_deployment = _read("docs/release-deployment.md")
     release_checklist = _read("docs/release-checklist.md")
-    changelog = _read("CHANGELOG.md")
+    changelog = _read("CHANGELOGS.md")
 
     assert "org.opencontainers.image.licenses=AGPL-3.0-only" in release_deployment
     assert "org.opencontainers.image.licenses=MIT" not in release_deployment
