@@ -3,7 +3,7 @@
 **Repository:** `GoreeCloud/notify`  
 **Former repository identity in the Drive source:** `GoreeCloud/goreecloud-notify`  
 **Project type:** First-party centralized notification-delivery application and service  
-**Lifecycle:** Release Candidate source line; production activation remains unaccepted  
+**Repository lifecycle declaration (legacy Contract 0.4):** `release-candidate`; canonical Contract 2.0 lifecycle reclassification remains pending and must be evidence-backed; production activation remains unaccepted  
 **Version:** `0.2.0`  
 **Migration baseline:** `d9d3163cb4ac65a3c13984eabb0a0830a090695b`  
 **License:** `AGPL-3.0-only` for current and future GoreeCloud-owned source; copies previously distributed under MIT retain their prior grants  
