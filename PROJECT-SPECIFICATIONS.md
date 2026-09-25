@@ -381,7 +381,7 @@ At migration baseline `d9d3163cb4ac65a3c13984eabb0a0830a090695b`, accepted `main
 - canonical cross-platform Notify identity;
 - first-party Flutter Linux/Android client;
 - persistent Android delivery foundation;
-- Platform Contract 0.4 nine-system evaluation;
+- repository manifest currently on legacy Platform Contract 0.4 nine-system evaluation, with explicit evidence-backed migration to canonical Contract 2.0 still required;
 - Git-native feature/changelog governance;
 - Glaze UI 1.6.0 source mappings.
 
