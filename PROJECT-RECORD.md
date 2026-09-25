@@ -176,7 +176,7 @@ At migration baseline `d9d3163cb4ac65a3c13984eabb0a0830a090695b`, accepted sourc
 - private production-runtime candidate;
 - first-party Flutter Linux and Android clients;
 - persistent Android delivery foundation;
-- Platform Contract 0.4 nine-system evaluation;
+- repository manifest retained on Contract 0.4 nine-system evaluation pending explicit Contract 2.0 migration;
 - Git-native feature/changelog governance;
 - Glaze UI 1.6.0 source mappings.
 
