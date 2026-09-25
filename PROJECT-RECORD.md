@@ -210,7 +210,7 @@ The connected GitHub application does not expose branch-protection/ruleset mutat
 
 ## September 25, 2026 — Project specifications/project record migration candidate
 
-**Migration branch:** `docs/project-governance-migration-20260925` → `main`
+**Migration pull request:** PR #114 — `docs/project-governance-migration-20260925` → `main`
 
 This migration:
 - creates root `PROJECT-SPECIFICATIONS.md`;
