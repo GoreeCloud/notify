@@ -51,3 +51,14 @@
 ## Governance rule
 
 Feature lifecycle authority lives in `IMPLEMENTED-FEATURES.md` and this file. `FEATURE-ROADMAP.md` is retired and must not be recreated as an active control. Repository change history lives in `CHANGELOGS.md`. Google Drive roadmap/changelog copies are not parallel authoritative mirrors.
+
+
+## Legacy Drive roadmap identifier traceability
+
+This table preserves the material identifiers and source-state wording from the retired Google Drive roadmap. The current lifecycle classification and authoritative feature truth remain the `IF-*` and `PF-*` records above; this table is migration traceability only and must not be used to revive Drive as a synchronization target.
+
+| Legacy ID | Legacy obligation | Priority | Source state at migration |
+| --- | --- | --- | --- |
+| FR-001 | Reconcile and maintain every current planned or recommended GoreeCloud Notify feature from the authoritative project record and verified repository evidence in this roadmap. | High | Ongoing control |
+| FR-002 | Move actionable feature obligations into GoreeCloud Tasks Management when required, preserving priority, dependency, and lifecycle disposition. | High | Ongoing control |
+| FR-003 | Do not mark features implemented, complete, cancelled, or superseded without authoritative evidence and synchronized authoritative feature records under the governance in force at the time; the former Drive copy is now retired. | High | Ongoing control |
