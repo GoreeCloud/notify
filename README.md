@@ -61,7 +61,9 @@ The application does not require a public backend host port. The intended produc
 ├── docker-compose.yml             Development topology
 ├── docker-compose.production.yml  Production runtime contract
 ├── Dockerfile.production          Reproducible multi-stage production image
-├── IMPLEMENTED-FEATURES.md       Evidence-backed implemented feature authority
+├── PROJECT-SPECIFICATIONS.md      Canonical project requirements and acceptance boundary
+├── PROJECT-RECORD.md              Significant project history and governance record
+├── IMPLEMENTED-FEATURES.md        Evidence-backed implemented feature authority
 ├── PLANNED-FEATURES.md            Planned feature and acceptance authority
 ├── CHANGELOGS.md                  Repository change-history authority
 ├── LICENSE                        AGPL-3.0-only license grant
@@ -229,7 +231,7 @@ See `SECURITY.md` and `docs/security.md`.
 
 Source readiness is not the same as production activation. Before GoreeCloud Notify can become the production notification service, GoreeCloud still requires:
 
-1. current Stable Glaze UI **1.6.0** repository-local adoption and representative web/Linux/Android acceptance; current source remains a verified 1.5.1 adoption candidate until #101 is completed;
+1. current Stable Glaze UI **1.6.0** repository-local source adoption and representative web/Linux/Android acceptance; 1.6.0 source mapping is integrated, while application-specific acceptance remains pending;
 2. explicit evaluation of all nine Integral Platform Systems, with unsupported or unaccepted systems remaining fail-closed rather than implied complete;
 3. manual keyboard, screen-reader, zoom/reflow, browser-permission, real OS notification, native-client, and practical multi-tab acceptance;
 4. target backup repository/schedule/retention plus a successful recorded target restore;
@@ -241,6 +243,15 @@ Source readiness is not the same as production activation. Before GoreeCloud Not
 
 ntfy retirement is verified historical state, not proof that GoreeCloud Notify has completed these gates.
 
+
+## Project governance
+
+The authoritative project requirements and significant project history are repository-local:
+
+- [PROJECT-SPECIFICATIONS.md](PROJECT-SPECIFICATIONS.md)
+- [PROJECT-RECORD.md](PROJECT-RECORD.md)
+
+Current feature state is governed by [IMPLEMENTED-FEATURES.md](IMPLEMENTED-FEATURES.md) and [PLANNED-FEATURES.md](PLANNED-FEATURES.md); repository chronology is governed by [CHANGELOGS.md](CHANGELOGS.md). Historical Google Drive project specifications are migration sources only until the project-record migration is accepted and the standard deletion gate is satisfied.
 
 ## License
 

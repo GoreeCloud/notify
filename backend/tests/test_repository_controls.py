@@ -4,7 +4,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 MANDATORY_ROOT_CONTROLS = [
     "README.md",
-    "SPECIFICATIONS.md",
+    "PROJECT-SPECIFICATIONS.md",
+    "PROJECT-RECORD.md",
     "FEATURES.md",
     "IMPLEMENTED-FEATURES.md",
     "PLANNED-FEATURES.md",
@@ -28,13 +29,13 @@ def test_mandatory_repository_controls_exist() -> None:
 
 
 def test_retired_feature_and_changelog_controls_are_absent() -> None:
-    retired = ["FEATURE-ROADMAP.md", "CHANGELOG.md"]
+    retired = ["FEATURE-ROADMAP.md", "CHANGELOG.md", "SPECIFICATIONS.md"]
     present = [name for name in retired if (ROOT / name).exists()]
     assert present == []
 
 
 def test_repository_controls_keep_release_candidate_boundary() -> None:
-    specs = (ROOT / "SPECIFICATIONS.md").read_text(encoding="utf-8")
+    specs = (ROOT / "PROJECT-SPECIFICATIONS.md").read_text(encoding="utf-8")
     features = (ROOT / "FEATURES.md").read_text(encoding="utf-8")
     notes = (ROOT / "NOTES.md").read_text(encoding="utf-8")
     assert "release candidate" in specs.lower()
