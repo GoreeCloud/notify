@@ -114,3 +114,6 @@ All notable source releases of GoreeCloud Notify are recorded here. Detailed ope
 The final source line passed backend regression tests, locked frontend lint/type/build validation, Chromium/browser-accessibility tests, production-readiness validation, monitoring-alert readiness, dependency/license verification, and target-preflight self-tests. The production-readiness gate additionally proves fail-closed build-revision handling, exact revision propagation, HSTS, private-network authorization, persistence, and synthetic secret-leak protections.
 
 Production activation remains a separate controlled operation. ntfy remains the active production notification service until target backup/restore, monitoring/out-of-band alerting, private-publication/runtime, manual browser/OS acceptance, migration, and rollback evidence are complete.
+## 2026-09-27
+
+- Strengthened target-runtime provenance checks by binding the candidate OCI image to the canonical GoreeCloud Notify title/source/license identity, retaining exact revision validation, and recording available repository digests. Production acceptance remains pending.

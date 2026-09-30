@@ -66,3 +66,7 @@ The following are not implemented production acceptance claims and remain contro
 - remaining Integral Platform System acceptance;
 - final manual browser/OS/native acceptance;
 - explicit production-activation approval and Stable qualification.
+
+## Target image identity evidence
+
+- The read-only target preflight validates the exact OCI revision together with the canonical GoreeCloud Notify image title, source repository, and AGPL-3.0-only license identity, and records available repository digests without treating image provenance as production acceptance.

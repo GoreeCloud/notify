@@ -52,6 +52,9 @@ CURRENT_ACCEPTANCE_GATES = {
 }
 NETBIRD = ipaddress.ip_network("100.64.0.0/10")
 REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
+OCI_IMAGE_TITLE = "GoreeCloud Notify"
+OCI_IMAGE_SOURCE = "https://github.com/GoreeCloud/notify"
+OCI_IMAGE_LICENSE = "AGPL-3.0-only"
 LOG_MARKERS = {
     "authorization_header": re.compile(r"\bauthorization\s*:", re.I),
     "bearer_token": re.compile(r"\bbearer\s+[A-Za-z0-9._~+/=-]{8,}", re.I),
@@ -151,6 +154,18 @@ def validate_release_meta(meta: dict[str, object], expected_revision: str) -> No
         or observability.get("sensitive_request_data_logged") is not False
     ):
         raise AssertionError("observability metadata is inconsistent")
+
+
+def validate_image_identity(labels: dict[str, object], expected_revision: str) -> None:
+    expected = {
+        "org.opencontainers.image.title": OCI_IMAGE_TITLE,
+        "org.opencontainers.image.source": OCI_IMAGE_SOURCE,
+        "org.opencontainers.image.licenses": OCI_IMAGE_LICENSE,
+        "org.opencontainers.image.revision": expected_revision,
+    }
+    for name, value in expected.items():
+        if labels.get(name) != value:
+            raise AssertionError(f"OCI image identity mismatch for {name}")
 
 
 def request(
@@ -282,6 +297,47 @@ def host_checks(args, checks: list[dict[str, str]]) -> None:
             revision == args.expected_revision,
             f"OCI image revision matches {args.expected_revision}",
             f"OCI image revision is {revision!r}",
+        )
+        labels = decoded(
+            command(
+                "docker",
+                "image",
+                "inspect",
+                "--format",
+                "{{json .Config.Labels}}",
+                image_id,
+            ),
+            {},
+        )
+        try:
+            validate_image_identity(labels, args.expected_revision)
+        except AssertionError as exc:
+            add(checks, "image_identity", False, "", str(exc))
+        else:
+            add(
+                checks,
+                "image_identity",
+                True,
+                "OCI title, source, license, and exact revision identify GoreeCloud Notify",
+                "",
+            )
+        repo_digests = decoded(
+            command(
+                "docker",
+                "image",
+                "inspect",
+                "--format",
+                "{{json .RepoDigests}}",
+                image_id,
+            ),
+            [],
+        )
+        checks.append(
+            {
+                "name": "container_image_repo_digests",
+                "status": "pass",
+                "detail": ", ".join(sorted(str(item) for item in repo_digests)) or "unavailable",
+            }
         )
     except (OSError, subprocess.CalledProcessError, ValueError, json.JSONDecodeError) as exc:
         add(
@@ -537,6 +593,29 @@ def self_test() -> None:
     add(checks, "no", False, "ok", "expected")
     assert REVISION_RE.fullmatch("a" * 40)
     assert not REVISION_RE.fullmatch("development")
+    validate_image_identity(
+        {
+            "org.opencontainers.image.title": OCI_IMAGE_TITLE,
+            "org.opencontainers.image.source": OCI_IMAGE_SOURCE,
+            "org.opencontainers.image.licenses": OCI_IMAGE_LICENSE,
+            "org.opencontainers.image.revision": "a" * 40,
+        },
+        "a" * 40,
+    )
+    try:
+        validate_image_identity(
+            {
+                "org.opencontainers.image.title": OCI_IMAGE_TITLE,
+                "org.opencontainers.image.source": "https://example.invalid/not-notify",
+                "org.opencontainers.image.licenses": OCI_IMAGE_LICENSE,
+                "org.opencontainers.image.revision": "a" * 40,
+            },
+            "a" * 40,
+        )
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("image identity validator accepted the wrong OCI source")
     assert ipaddress.ip_address("100.71.27.119") in NETBIRD
     assert ipaddress.ip_address("135.148.45.22") not in NETBIRD
 
