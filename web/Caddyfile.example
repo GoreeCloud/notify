@@ -1,7 +1,9 @@
-# PRIVATE DEVELOPMENT EXAMPLE ONLY — not an applied DNS or gateway configuration.
-# Requires appropriate VPN/firewall restrictions, TLS and host-specific authorization.
-# Example hostnames are illustrative and must be reviewed against GoreeCloud inventory.
-# NTFY_UPSTREAM must resolve to an authorized ntfy backend (e.g. 127.0.0.1:8080).
+# PRIVATE DEVELOPMENT TEMPLATE ONLY — do not apply without access review.
+# A hostname here does NOT assert an existing DNS record or accessible deployment.
+# Enforce approved VPN, private DNS, TLS, firewall and authentication separately.
+#
+# NTFY_UPSTREAM must be a fixed authorized backend, never chosen by user input.
+# A browser-facing frontend does not authorize public ntfy backend exposure.
 notify-dev.goreecloud.com {
     encode zstd gzip
 
@@ -9,19 +11,30 @@ notify-dev.goreecloud.com {
         Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
         Referrer-Policy "no-referrer"
         X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Cross-Origin-Resource-Policy "same-origin"
         Cache-Control "no-store"
     }
 
-    handle_path /api/ntfy/* {
+    # Only the endpoints necessary for this preview are forwarded. ntfy's
+    # server-side authentication and topic ACLs remain mandatory.
+    @ntfyApi path_regexp ^/api/ntfy/(?:v1/health|[A-Za-z0-9_-]{1,64}(?:/json)?)$
+    handle @ntfyApi {
+        uri strip_prefix /api/ntfy
         reverse_proxy {$NTFY_UPSTREAM}
     }
-
-    handle /tests/* {
+    handle /api/ntfy/* {
         respond "Not Found" 404
     }
 
-    handle {
+    # Explicit asset allowlist: never expose the Python dev server, tests,
+    # local configuration, CI files, Caddy templates or documentation.
+    @webAssets path / /index.html /app.js /protocol.js /state.js /styles.css /favicon.svg
+    handle @webAssets {
         root * /srv/goreecloud/notify/web
         file_server
+    }
+    handle {
+        respond "Not Found" 404
     }
 }

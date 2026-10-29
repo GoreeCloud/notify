@@ -81,25 +81,58 @@ export function humanError(error) {
   if (error instanceof TypeError) return "Network unavailable or cross-origin access blocked";
   return error instanceof Error ? error.message : "Request failed";
 }
+export class NtfyRequestError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = "NtfyRequestError";
+    this.status = status;
+  }
+}
 async function checkResponse(response) {
   if (response.type === "opaqueredirect" || response.redirected)
     throw new Error("Redirect blocked: server configuration requires review");
   if (!response.ok) {
-    if (response.status === 401 || response.status === 403) throw new Error("Access denied. Check token and permissions");
-    if (response.status === 429) throw new Error("Rate limited by ntfy server");
-    throw new Error("ntfy returned HTTP " + response.status);
+    if (response.status === 401 || response.status === 403)
+      throw new NtfyRequestError("Access denied. Check token and permissions", response.status);
+    if (response.status === 429) throw new NtfyRequestError("Rate limited by ntfy server", 429);
+    throw new NtfyRequestError("ntfy returned HTTP " + response.status, response.status);
   }
 }
 export async function publish(fetcher, endpoint, topic, message, options = {}, token = "", signal) {
   const { url, init } = makePublishRequest(endpoint, topic, message, options, token);
   await checkResponse(await fetcher(url, { ...init, signal }));
 }
+/** Enforce a byte cap while reading, before materializing a response body. */
+async function readHealthBody(response) {
+  const reader = response.body?.getReader?.();
+  if (!reader) {
+    // Fallback for test doubles; normal browser fetch responses always stream.
+    const body = await response.text();
+    if (new TextEncoder().encode(body).byteLength > 4096) throw new Error("Oversized health response");
+    return body;
+  }
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  let count = 0, result = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      count += value.byteLength;
+      if (count > 4096) throw new Error("Oversized health response");
+      result += decoder.decode(value, { stream: true });
+    }
+    result += decoder.decode();
+    return result;
+  } finally {
+    if (count > 4096) await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+}
 export async function health(fetcher, endpoint, token = "", signal) {
   const url = normalizeEndpoint(endpoint).replace(/\/$/, "") + "/v1/health";
   const response = await fetcher(url, { method: "GET", redirect: "error", headers: headers(token), signal });
   await checkResponse(response);
-  const body = await response.text();
-  if (body.length > 4096) throw new Error("Oversized health response");
+  const body = await readHealthBody(response);
   let payload;
   try { payload = JSON.parse(body); } catch { throw new Error("Invalid health response"); }
   if (typeof payload?.healthy !== "boolean") throw new Error("Unrecognized health response");

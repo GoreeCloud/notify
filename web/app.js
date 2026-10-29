@@ -1,12 +1,13 @@
 /** GoreeCloud Notify — supplementary web client, not an OS-native replacement. */
-import { validateTopic, normalizeEndpoint, subscribeOnce, publish, health, humanError, chooseToken } from "./protocol.js";
-import { loadSettings, saveSettings, addTopic, removeTopic, createInbox, addMessage, filterMessages } from "./state.js";
+import { validateTopic, normalizeEndpoint, subscribeOnce, publish, health, humanError, chooseToken, NtfyRequestError } from "./protocol.js";
+import { loadSettings, saveSettings, addTopic, removeTopic, createInbox, addMessage, filterMessages, markRead } from "./state.js";
 
 const $ = id => document.getElementById(id);
 const storage = (() => { try { return window.localStorage; } catch { return null; } })();
 let settings = loadSettings(storage);
 let token = ""; // Only in memory. Never save credentials or message bodies.
 let healthStatus = "Not checked", healthDetail = "Run a read-only check", generation = 0, toastTimer;
+let healthController = null;
 const inboxes = new Map(), streams = new Map();
 function inbox(topic) { if (!inboxes.has(topic)) inboxes.set(topic, createInbox()); return inboxes.get(topic); }
 function persist() { try { saveSettings(storage, settings); } catch { toast("Local preferences could not be saved"); } }
@@ -23,7 +24,7 @@ function text(tag, className, value = "") {
   const el = document.createElement(tag); if (className) el.className = className;
   el.textContent = String(value); return el;
 }
-function viewTopic(topic) { settings.selected = topic; if (topic) inbox(topic).unread = 0; render(); }
+function viewTopic(topic) { settings.selected = topic; markRead(inboxes, topic); render(); }
 function formatTime(seconds) {
   const date = new Date(seconds * 1000);
   return seconds && Number.isFinite(date.getTime()) ? date.toLocaleString([], {
@@ -33,6 +34,7 @@ function formatTime(seconds) {
 function renderTopics() {
   const target = $("topics"); target.replaceChildren();
   $("all-topics").classList.toggle("active", settings.selected === null);
+  $("all-topics").setAttribute("aria-current", settings.selected === null ? "page" : "false");
   for (const topic of settings.topics) {
     const row = text("div", "topic-list-item");
     const button = text("button", "topic-button");
@@ -110,6 +112,8 @@ function render() {
 }
 function abortStreams() {
   generation++;
+  healthController?.abort();
+  healthController = null;
   for (const controller of streams.values()) controller.abort();
   streams.clear();
 }
@@ -138,6 +142,10 @@ async function followTopic(topic, controller, epoch) {
     } catch (error) {
       if (controller.signal.aborted || generation !== epoch) break;
       box.status = "Error: " + humanError(error);
+      renderConnection();
+      // An ACL rejection cannot be repaired by exponential retry. Wait for
+      // the user to update credentials or their server permissions.
+      if (error instanceof NtfyRequestError && [401, 403].includes(error.status)) break;
     }
     renderConnection();
     if (controller.signal.aborted || generation !== epoch) break;
@@ -156,16 +164,24 @@ function startStreams(clearHistory = false) {
   render();
 }
 async function testHealth() {
+  healthController?.abort();
+  const controller = new AbortController();
+  healthController = controller;
+  const timer = setTimeout(() => controller.abort(), 8000);
   const epoch = generation, started = performance.now();
   healthStatus = "Checking…"; healthDetail = "Read-only request to ntfy"; render();
   try {
-    const result = await health(fetch, settings.endpoint, token);
-    if (generation !== epoch) return;
+    const result = await health(fetch, settings.endpoint, token, controller.signal);
+    if (generation !== epoch || healthController !== controller) return;
     healthStatus = result ? "Healthy" : "Unhealthy";
     healthDetail = "Responded in " + Math.round(performance.now() - started) + " ms";
   } catch (error) {
-    if (generation !== epoch) return;
-    healthStatus = "Unavailable"; healthDetail = humanError(error);
+    if (generation !== epoch || healthController !== controller) return;
+    healthStatus = "Unavailable";
+    healthDetail = controller.signal.aborted ? "Health request timed out" : humanError(error);
+  } finally {
+    clearTimeout(timer);
+    if (healthController === controller) healthController = null;
   }
   render(); toast(healthStatus + " · " + healthDetail);
 }

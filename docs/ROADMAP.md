@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | P0 | Web app manual browser/device acceptance | Source, isolated mock HTTP proxy and automated JS checks exist; real browser interactions and responsive accessibility are not yet verified |
 | P0 | Private web routing and service authorization | Verify approved app hostname, private DNS, VPN, TLS, gateway ACLs, ntfy service permissions and streaming path before deployment |
-| P0 | Linux GUI smoke test / keyboard accessibility / screen-reader review | Successful native window launch, screenshots, keyboard and Orca review |
+| P0 | Linux GUI smoke test / keyboard accessibility / screen-reader review | Process-group-controlled headless package launch test exists; real GUI screenshots, keyboard and Orca review remain unverified |
 | P0 | Integration tests against an isolated ntfy container with ACLs | End-to-end read/publish, auth denial, reconnect, rate limit |
 | P0 | Stop subscriptions on server change and validate clean shutdown | No obsolete-stream messages after switch, bounded thread counts |
 | P0 | Native Linux packaging, desktop entry, icon, application ID | Installed package, start/stop, uninstall, runtime verification |

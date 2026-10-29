@@ -5,6 +5,7 @@ import json
 import threading
 import urllib.error
 import urllib.request
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
@@ -71,8 +72,12 @@ def local_servers(monkeypatch):
         thread_upstream.join(timeout=2)
 
 
-def request(url, method="GET", data=None, token=""):
+def request(url, method="GET", data=None, token="", extra_headers=None):
     headers = {"Authorization": "Bearer " + token} if token else {}
+    if method == "POST":
+        parts = urllib.parse.urlsplit(url)
+        headers["Origin"] = f"{parts.scheme}://{parts.netloc}"
+    headers.update(extra_headers or {})
     return urllib.request.urlopen(urllib.request.Request(url, method=method, data=data, headers=headers), timeout=3)
 
 
@@ -97,6 +102,11 @@ def test_web_static_and_content_security_policy(local_servers):
     with pytest.raises(urllib.error.HTTPError) as error:
         request(base + "/api/ntfy/bad/path/more")
     assert error.value.code == 400
+    for private in ("/dev_server.py", "/Caddyfile.example", "/tests/protocol.test.js", "/README.md"):
+        for method in ("GET", "HEAD"):
+            with pytest.raises(urllib.error.HTTPError) as hidden:
+                request(base + private, method=method)
+            assert hidden.value.code == 404
 
 
 def test_same_origin_health_subscribe_publish_and_bearer(local_servers):
@@ -125,3 +135,27 @@ def test_disallows_unbounded_endpoints_and_redirects(local_servers):
     with pytest.raises(urllib.error.HTTPError) as error:
         request(base + "/api/ntfy/alerts", method="POST", data=b"x" * 8200)
     assert error.value.code == 413
+
+def test_loopback_csrf_origin_and_host_defense(local_servers):
+    base, received = local_servers
+    original = len(received)
+    for headers in (
+        {"Origin": "https://malicious.example"},
+        {"Origin": "null"},
+        {"Origin": ""},
+        {"Sec-Fetch-Site": "cross-site"},
+    ):
+        with pytest.raises(urllib.error.HTTPError) as rejected:
+            request(base + "/api/ntfy/alerts", method="POST", data=b"malicious",
+                    extra_headers=headers)
+        assert rejected.value.code == 403
+    # Missing Origin must also fail, even without a browser fetch header.
+    with pytest.raises(urllib.error.HTTPError) as no_origin:
+        urllib.request.urlopen(urllib.request.Request(
+            base + "/api/ntfy/alerts", data=b"malicious", method="POST"
+        ), timeout=2)
+    assert no_origin.value.code == 403
+    with pytest.raises(urllib.error.HTTPError) as rebinding:
+        request(base + "/api/ntfy/v1/health", extra_headers={"Host": "evil.example"})
+    assert rebinding.value.code == 403
+    assert len(received) == original

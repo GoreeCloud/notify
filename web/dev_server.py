@@ -20,6 +20,7 @@ TOPIC_RE = re.compile(r"^/([A-Za-z0-9_-]{1,64})(/json)?$")
 HEALTH_PATH = "/v1/health"
 MAX_POST = 8192
 MAX_STREAM_LINE = 65536
+PUBLIC_FILES = {"/", "/index.html", "/app.js", "/protocol.js", "/state.js", "/styles.css", "/favicon.svg"}
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
     "connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
@@ -60,18 +61,55 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
         super().end_headers()
 
     def list_directory(self, path):
         self.send_error(403)
         return None
 
+    def _local_origin(self):
+        """Deny DNS rebinding and cross-site API use on this loopback server."""
+        hostname = self.headers.get("Host", "")
+        allowed_hosts = {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}
+        if hostname not in allowed_hosts:
+            self.send_error(403, "Unrecognized local host")
+            return None
+        origin = "http://" + hostname
+        supplied = self.headers.get("Origin")
+        if supplied is not None and supplied != origin:
+            self.send_error(403, "Cross-origin requests are not permitted")
+            return None
+        if self.headers.get("Sec-Fetch-Site", "").lower() == "cross-site":
+            self.send_error(403, "Cross-site requests are not permitted")
+            return None
+        return origin
+
     def do_GET(self):
+        if self._local_origin() is None:
+            return
         if self.path.startswith("/api/ntfy"):
             return self.proxy("GET")
+        if self.path not in PUBLIC_FILES:
+            return self.send_error(404, "File not public")
         return super().do_GET()
 
+    def do_HEAD(self):
+        if self._local_origin() is None:
+            return
+        if self.path not in PUBLIC_FILES:
+            return self.send_error(404, "File not public")
+        return super().do_HEAD()
+
     def do_POST(self):
+        origin = self._local_origin()
+        if origin is None:
+            return
+        # Browsers send Origin with fetch POST. Requiring it blocks cross-site
+        # form posts against unauthenticated local ntfy endpoints.
+        if self.headers.get("Origin") != origin:
+            return self.send_error(403, "Same-origin POST required")
         if not self.path.startswith("/api/ntfy"):
             return self.send_error(405)
         return self.proxy("POST")

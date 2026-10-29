@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { freshState, loadSettings, saveSettings, SETTINGS_KEY, addTopic, removeTopic,
-  createInbox, addMessage, filterMessages, MAX_MESSAGES, MAX_RECENT_IDS } from "../state.js";
+  createInbox, addMessage, filterMessages, markRead, MAX_MESSAGES, MAX_RECENT_IDS } from "../state.js";
 
 function memoryStore() {
   const items = new Map();
@@ -51,4 +51,15 @@ test("offline filtering is case-insensitive and all words must match", () => {
   assert.deepEqual(filterMessages(notes, "storage DEGRADED", 4), [notes[1]]);
   assert.deepEqual(filterMessages(notes, "ZFS"), notes);
   assert.deepEqual(filterMessages(notes, "no match"), []);
+});
+
+test("combined feed marks all inboxes read, topic view only its own inbox", () => {
+  const inboxes = new Map([["alerts", createInbox()], ["ops", createInbox()]]);
+  inboxes.get("alerts").unread = 3;
+  inboxes.get("ops").unread = 4;
+  markRead(inboxes, "alerts");
+  assert.equal(inboxes.get("alerts").unread, 0);
+  assert.equal(inboxes.get("ops").unread, 4);
+  markRead(inboxes, null);
+  assert.equal(inboxes.get("ops").unread, 0);
 });
