@@ -9,6 +9,7 @@ GoreeCloud Notify is the original client. Upstream ntfy remains independently au
 | Component | Responsibility |
 | --- | --- |
 | `core.py` | ntfy validation, JSON event parsing, HTTP publish/stream, bearer auth headers, strict no-redirect behavior |
+| `filters.py` | Pure, case-insensitive in-memory search and minimum-priority filtering without API requests |
 | `storage.py` | Atomic 0600 metadata config and operating-system keyring access |
 | `worker.py` | Per-topic background subscription, deduplication, cursor replay, bounded reconnect delay and generation fences |
 | `ui.py` | Native GTK4/libadwaita layout, setup flow, topic navigation, text compose and message cards |
@@ -45,3 +46,7 @@ The app does not implement server-side users, ACLs, attachments, arbitrary HTTP 
 ## Topic removal and connection lifecycle
 
 Unsubscribing requires confirmation, saves the new topic set first, stops older streams and clears that topic's in-memory history. Switching servers increments a UI generation so already-queued GTK callbacks from an older connection are discarded. The worker independently checks cancellation and captures per-generation callbacks. The setting update is atomic; no ntfy server-side delete is issued.
+
+## Local search and priority filtering
+
+The native search entry filters only the selected topic's at-most-200 messages currently in process memory. Each word must match case-insensitively within the title, body, tags or topic. The priority chooser limits results to all, high/urgent, or urgent-only. Search terms are not persisted, logged or transmitted, and a filtered-out message is not removed from memory. This is not a server-wide historical search.

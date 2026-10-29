@@ -10,6 +10,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk
 
 from .core import NtfyClient, Notification, NotifyError, normalize_server, validate_topic
+from .filters import filter_notifications
 from .storage import load_settings, load_token, save_settings, save_token
 from .worker import SubscriptionManager
 
@@ -49,6 +50,8 @@ class NotifyWindow(Adw.ApplicationWindow):
         self.statuses: dict[str, str] = {}
         self.rows: dict[Gtk.ListBoxRow, str] = {}
         self.selected_topic: str | None = None
+        self.search_query = ""
+        self.min_priority = 1
         self.manager = SubscriptionManager(
             lambda n: GLib.idle_add(self._received, n),
             lambda topic, state: GLib.idle_add(self._status, topic, state),
@@ -109,6 +112,17 @@ class NotifyWindow(Adw.ApplicationWindow):
         self.subtitle = label("Private by design · Powered by ntfy", "notify-muted")
         heading.append(self.heading)
         heading.append(self.subtitle)
+        filter_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.search_entry = Gtk.SearchEntry(hexpand=True)
+        self.search_entry.set_placeholder_text("Search messages in this topic")
+        self.search_entry.set_tooltip_text("Search is local to messages held in memory")
+        self.search_entry.connect("search-changed", self._filters_changed)
+        filter_bar.append(self.search_entry)
+        self.priority_filter = Gtk.DropDown.new_from_strings(["All priorities", "High & urgent", "Urgent only"])
+        self.priority_filter.set_tooltip_text("Filter locally by minimum priority")
+        self.priority_filter.connect("notify::selected", self._filters_changed)
+        filter_bar.append(self.priority_filter)
+        heading.append(filter_bar)
         main.append(heading)
         self.stack = Gtk.Stack(vexpand=True, hexpand=True)
         self.empty = Adw.StatusPage(
@@ -169,6 +183,11 @@ class NotifyWindow(Adw.ApplicationWindow):
             self.selected_topic = self.rows[row]
             self._render_messages()
 
+    def _filters_changed(self, *_):
+        self.search_query = self.search_entry.get_text()[:120]
+        self.min_priority = (1, 4, 5)[self.priority_filter.get_selected()]
+        self._render_messages()
+
     def _render_messages(self):
         row = self.message_list.get_first_child()
         while row is not None:
@@ -176,19 +195,31 @@ class NotifyWindow(Adw.ApplicationWindow):
             self.message_list.remove(row)
             row = next_row
         topic = self.selected_topic
+        self.search_entry.set_sensitive(bool(topic))
+        self.priority_filter.set_sensitive(bool(topic))
         if not topic:
             self.stack.set_visible_child_name("empty")
             self.heading.set_text("Notifications")
             self.subtitle.set_text("Set up a private ntfy connection to begin")
             return
         self.heading.set_text("# " + topic)
-        notes = self.messages.get(topic, [])
-        self.subtitle.set_text(self.statuses.get(topic, "Waiting for connection") + " · " + str(len(notes)) + " in this session")
+        total = self.messages.get(topic, [])
+        notes = filter_notifications(total, query=self.search_query, min_priority=self.min_priority)
+        self.subtitle.set_text(
+            self.statuses.get(topic, "Waiting for connection") +
+            " · " + str(len(notes)) + " of " + str(len(total)) + " messages in memory"
+        )
         self.stack.set_visible_child_name("messages")
         if not notes:
+            filtered = bool(total)
             state = Adw.StatusPage(
-                icon_name="mail-read-symbolic", title="Nothing here yet",
-                description="New notifications will appear automatically. Use New message to send a test.",
+                icon_name="mail-read-symbolic",
+                title="No matching notifications" if filtered else "Nothing here yet",
+                description=(
+                    "Try another search or priority filter. Your messages have not been deleted."
+                    if filtered else
+                    "New notifications will appear automatically. Use New message to send a test."
+                ),
             )
             self.message_list.append(state)
         for note in reversed(notes):
