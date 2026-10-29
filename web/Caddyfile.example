@@ -1,0 +1,27 @@
+# PRIVATE DEVELOPMENT EXAMPLE ONLY — not an applied DNS or gateway configuration.
+# Requires appropriate VPN/firewall restrictions, TLS and host-specific authorization.
+# Example hostnames are illustrative and must be reviewed against GoreeCloud inventory.
+# NTFY_UPSTREAM must resolve to an authorized ntfy backend (e.g. 127.0.0.1:8080).
+notify-dev.goreecloud.com {
+    encode zstd gzip
+
+    header {
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+        Referrer-Policy "no-referrer"
+        X-Content-Type-Options "nosniff"
+        Cache-Control "no-store"
+    }
+
+    handle_path /api/ntfy/* {
+        reverse_proxy {$NTFY_UPSTREAM}
+    }
+
+    handle /tests/* {
+        respond "Not Found" 404
+    }
+
+    handle {
+        root * /srv/goreecloud/notify/web
+        file_server
+    }
+}

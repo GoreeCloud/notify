@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#101826">
+  <meta name="description" content="GoreeCloud Notify — a privacy-first browser client for your ntfy server.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <title>GoreeCloud Notify</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="shell" id="app">
+    <aside class="sidebar" aria-label="Topic navigation">
+      <div class="identity">
+        <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10ZM10 21h4"/></svg></div>
+        <div><strong>GoreeCloud <span>Notify</span></strong><small>YOUR SIGNAL SPACE</small></div>
+      </div>
+      <div class="side-section-heading"><span>WORKSPACE</span><span class="tiny-pill">WEB</span></div>
+      <button class="nav-button active" id="all-topics" type="button"><span class="nav-icon">◈</span><span>All notifications</span><span class="nav-count" id="all-count">0</span></button>
+      <div class="side-section-heading topics-heading"><span>YOUR TOPICS</span><button id="add-topic" class="icon-button small" aria-label="Add topic" title="Add topic">+</button></div>
+      <nav id="topics" class="topics" aria-label="Subscribed topics"></nav>
+      <div class="side-spacer"></div>
+      <div class="connection-card">
+        <div class="connection-card-top"><span class="pulse-dot" id="connection-dot"></span><strong id="connection-title">Not connected</strong></div>
+        <p id="endpoint-name">Configure a server to begin</p>
+        <button id="open-settings" class="ghost-button" type="button">Connection settings <span aria-hidden="true">↗</span></button>
+      </div>
+      <div class="side-bottom"><span>Private by design</span><span>v0.1 preview</span></div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <div class="breadcrumb"><span class="crumb-mark">●</span> NOTIFICATIONS <span class="breadcrumb-chevron">/</span> <span id="breadcrumb-topic">Overview</span></div>
+        <div class="top-actions">
+          <button class="icon-button" type="button" id="top-settings" aria-label="Connection settings" title="Connection settings">⚙</button>
+          <button class="icon-button" type="button" id="health-button" aria-label="Check server health" title="Check server health">↻</button>
+          <button class="icon-button" type="button" id="theme-button" aria-label="Toggle color theme" title="Toggle color theme">◐</button>
+          <button class="primary-button compact" type="button" id="compose-button"><span aria-hidden="true">+</span> New notification</button>
+        </div>
+      </header>
+      <main class="main-content" id="main">
+        <div class="hero">
+          <div><p class="eyebrow">YOUR NOTIFICATION CENTER</p><h1 id="page-title">Stay in the loop<span class="accent-dot">.</span></h1><p id="page-description">All your signals, in one calm place. Connected to your own ntfy server.</p></div>
+          <div class="hero-emblem" aria-hidden="true"><span>✦</span></div>
+        </div>
+        <section class="stats" aria-label="Overview">
+          <div class="stat"><span class="stat-label">RECEIVED THIS SESSION</span><strong id="stat-received">0</strong><small>Stored only in memory</small></div>
+          <div class="stat"><span class="stat-label">TOPICS WATCHED</span><strong id="stat-topics">0</strong><small>Live subscriptions</small></div>
+          <div class="stat"><span class="stat-label">UNREAD</span><strong id="stat-unread">0</strong><small>Mark read by viewing</small></div>
+          <div class="stat"><span class="stat-label">SERVER HEALTH</span><strong class="stat-health" id="stat-health">Not checked</strong><small id="health-subtitle">Run a read-only check</small></div>
+        </section>
+        <section class="feed-panel" aria-label="Notifications">
+          <div class="feed-header"><div><h2 id="feed-title">Recent activity</h2><p id="feed-summary">Your latest notifications appear here</p></div><button class="text-button" id="clear-memory" type="button">Clear session history</button></div>
+          <div class="filter-bar">
+            <label class="search-wrap"><span aria-hidden="true">⌕</span><span class="sr-only">Search notifications</span><input id="search" type="search" placeholder="Search messages, titles or tags" autocomplete="off"></label>
+            <label class="priority-wrap"><span class="sr-only">Minimum priority</span><select id="priority"><option value="1">All priorities</option><option value="4">High &amp; urgent</option><option value="5">Urgent only</option></select></label>
+          </div>
+          <div class="feed-list" id="feed" aria-live="polite" aria-relevant="additions text">
+            <div class="empty"><div class="empty-icon">✦</div><h3>Your signal starts here</h3><p>Connect your ntfy server and subscribe to a topic to see notifications.</p></div>
+          </div>
+        </section>
+        <div class="footer-line"><span>GoreeCloud Notify · Supplementary web application</span><span>No ads · No analytics · No message persistence</span></div>
+      </main>
+    </div>
+  </div>
+  <div role="status" aria-live="polite" class="toast" id="toast" hidden></div>
+  <dialog class="modal" id="settings-dialog" aria-labelledby="settings-title">
+    <form id="settings-form" method="dialog">
+      <div class="modal-top"><div><p class="eyebrow">SETUP</p><h2 id="settings-title">Connection settings</h2></div><button class="close-button" type="button" data-close="settings-dialog" aria-label="Close">×</button></div>
+      <p class="modal-intro">Connect to your own ntfy instance. A same-origin proxy at <code>/api/ntfy</code> is recommended for privately hosted deployments.</p>
+      <label class="field-label" for="server-input">NTFY API ENDPOINT</label>
+      <input id="server-input" required spellcheck="false" placeholder="/api/ntfy or https://ntfy.example.com" autocomplete="off">
+      <p class="help-text">Remote servers must use HTTPS and allow browser cross-origin requests. The browser only connects to the endpoint you configure.</p>
+      <label class="field-label" for="token-input">ACCESS TOKEN <span class="optional">(optional)</span></label>
+      <input id="token-input" type="password" autocomplete="off" placeholder="Enter bearer token for this session">
+      <p class="help-text">Tokens stay in memory only and are erased on refresh. Leave blank to keep the current session token.</p>
+      <label class="check-row"><input type="checkbox" id="forget-token"> Clear current session token</label>
+      <div class="modal-actions"><button type="button" class="secondary-button" data-close="settings-dialog">Cancel</button><button class="primary-button" type="submit">Save connection</button></div>
+    </form>
+  </dialog>
+  <dialog class="modal" id="topic-dialog" aria-labelledby="topic-title">
+    <form id="topic-form" method="dialog">
+      <div class="modal-top"><div><p class="eyebrow">SUBSCRIPTIONS</p><h2 id="topic-title">Add a topic</h2></div><button class="close-button" type="button" data-close="topic-dialog" aria-label="Close">×</button></div>
+      <p class="modal-intro">Topics on a public server can be discoverable. Use server-side access controls or a hard-to-guess name.</p>
+      <label class="field-label" for="topic-input">TOPIC NAME</label>
+      <input id="topic-input" required maxlength="64" placeholder="system-alerts" spellcheck="false">
+      <div class="modal-actions"><button type="button" class="secondary-button" data-close="topic-dialog">Cancel</button><button class="primary-button" type="submit">Subscribe</button></div>
+    </form>
+  </dialog>
+  <dialog class="modal" id="compose-dialog" aria-labelledby="compose-title">
+    <form id="compose-form" method="dialog">
+      <div class="modal-top"><div><p class="eyebrow">PUBLISH</p><h2 id="compose-title">New notification</h2></div><button class="close-button" type="button" data-close="compose-dialog" aria-label="Close">×</button></div>
+      <label class="field-label" for="compose-topic">TARGET TOPIC</label><select id="compose-topic" required></select>
+      <label class="field-label" for="compose-heading">TITLE <span class="optional">(optional)</span></label><input id="compose-heading" maxlength="160" placeholder="A quick update">
+      <label class="field-label" for="compose-message">MESSAGE</label><textarea id="compose-message" maxlength="8192" rows="5" required placeholder="Write your notification…"></textarea>
+      <div class="compose-grid"><div><label class="field-label" for="compose-priority">PRIORITY</label><select id="compose-priority"><option value="1">Minimum</option><option value="2">Low</option><option value="3" selected>Default</option><option value="4">High</option><option value="5">Urgent</option></select></div><div><label class="field-label" for="compose-tags">TAGS</label><input id="compose-tags" maxlength="120" placeholder="backup,success"></div></div>
+      <div class="modal-actions"><button type="button" class="secondary-button" data-close="compose-dialog">Cancel</button><button class="primary-button" type="submit" id="send-button">Send notification</button></div>
+    </form>
+  </dialog>
+</body>
+</html>

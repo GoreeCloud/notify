@@ -1,4 +1,4 @@
-name: Native Linux foundation checks
+name: GoreeCloud Notify checks
 on:
   push:
     branches: [main, "feat/**"]
@@ -17,7 +17,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 python3-pytest python3-keyring dpkg-dev desktop-file-utils xvfb xauth
       - name: Compile source
-        run: /usr/bin/python3 -m compileall -q goreecloud_notify tests
+        run: /usr/bin/python3 -m compileall -q goreecloud_notify tests web/dev_server.py
       - name: Unit tests
         run: /usr/bin/python3 -m pytest -q
       - name: GTK introspection import
@@ -37,3 +37,17 @@ jobs:
           path: dist/*.deb
           if-no-files-found: error
           retention-days: 7
+
+  web:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Static web JavaScript checks
+        run: npm run check
+        working-directory: web
+      - name: Dependency-free web unit and UI contract tests
+        run: npm test
+        working-directory: web
