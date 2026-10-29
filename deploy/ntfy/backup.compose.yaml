@@ -1,0 +1,38 @@
+# Optional private, isolated offline daily SQLite backup worker.
+# Must be paired with deploy/ntfy/compose.yaml in a private host directory.
+# NEVER mount live database or backup volumes into a web-facing service.
+services:
+  backup:
+    image: python:3.12-alpine@sha256:5789aa194f757888f41fa3d48e14b6feaa1b57c0af0b56fcb1372d6474d3bff0
+    container_name: goreecloud-ntfy-backup
+    command: ["python", "-B", "-u", "/app/ntfy_backup_scheduler.py"]
+    user: "1001:1001"
+    init: true
+    restart: unless-stopped
+    network_mode: none
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.25
+    environment:
+      TZ: UTC
+      PYTHONDONTWRITEBYTECODE: "1"
+      TMPDIR: /snapshots # Restore checks can exceed a small /tmp tmpfs as databases grow.
+    volumes:
+      - "./data:/source:ro"
+      - "./backups:/snapshots:rw"
+      - "./maintenance/backup_ntfy_sqlite.py:/app/backup_ntfy_sqlite.py:ro"
+      - "./maintenance/ntfy_backup_scheduler.py:/app/ntfy_backup_scheduler.py:ro"
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    healthcheck:
+      test: ["CMD", "python", "-B", "/app/ntfy_backup_scheduler.py", "--healthcheck"]
+      interval: 1h
+      timeout: 15s
+      retries: 2
+      start_period: 30s
+    stop_grace_period: 15s

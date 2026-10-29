@@ -56,6 +56,33 @@ Required filesystem permissions: source data directory `0700`, each database `06
 
 **Verified VPS execution (October 29, 2026):** One snapshot of the active instance succeeded with both databases intact, followed by an isolated restore/integrity check while ntfy remained healthy. The backup directory and nested snapshot use mode `0700`, database copies mode `0600`. This validates a *local* recoverable snapshot, not off-host disaster recovery, scheduled rotation, encrypted offsite storage, credential provisioning or a full service restoration. Check safe off-host backup storage and future restore/rotation before release acceptance.
 
+## Optional offline daily backup worker
+
+The [backup Compose override](backup.compose.yaml) runs a small **separate container** from a digest-pinned official Python image. It has no network, no host ports, a non-root UID, read-only root filesystem and the live SQLite bind mount is read-only. Its only writable persistent mount is the owner-only `backups/` directory. It runs the [daily backup scheduler](../../tools/ntfy_backup_scheduler.py) plus the online backup utility.
+
+Copy both scripts to a private `maintenance/` directory alongside `compose.yaml`; store the override beside `compose.yaml` as `backup.compose.yaml`. Use `chmod 0700` on the private deployment, maintenance and backups directories, and `chmod 0600` on the scripts and Compose files. The Docker worker expects UID/GID 1001 (change both deployment templates only after confirming the actual host data ownership).
+
+Start **only the worker** after a successful manual snapshot and isolated restore check:
+
+```sh
+docker compose -f compose.yaml -f backup.compose.yaml config --quiet
+docker compose -f compose.yaml -f backup.compose.yaml up -d --no-deps --no-build backup
+docker compose -f compose.yaml -f backup.compose.yaml ps
+docker exec goreecloud-ntfy-backup python -B /app/ntfy_backup_scheduler.py --healthcheck
+```
+
+It checks for an existing snapshot on startup, then schedules a run at **03:15 UTC daily**. It skips redundant same-date snapshots, verifies both SQLite files and checks a disposable restore before reporting success. Docker's worker healthcheck fails if the latest snapshot is more than **36 hours** old. The worker makes no network connections.
+
+The operator must regularly review the backup directory. This worker **never prunes or deletes snapshots**. Instead it stops creating more after **45 snapshots** or when available disk space is below **1 GiB**, logs a non-sensitive error type, and eventually becomes unhealthy. This is a deliberate fail-closed retention safeguard; an authorized retention/archival policy is required before the threshold is reached. Docker health state alone is not an alert-delivery mechanism.
+
+To stop this worker without stopping ntfy:
+
+```sh
+docker compose -f compose.yaml -f backup.compose.yaml stop backup
+```
+
+**Verified October 29, 2026:** the worker started successfully on the authorized VPS, with network mode `none`, all capabilities dropped, read-only live database bind, healthy status and a successful explicit scheduler healthcheck. On its first start, it recognized the verified same-day snapshot and did not create a duplicate. The first future scheduled job has **not** yet been observed; daily continuity, recovery after reboots, alert routing, retention authorization, off-host encryption and disaster-recovery drills remain open.
+
 ## Operations and rollback
 
 ```sh
