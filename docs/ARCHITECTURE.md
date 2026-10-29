@@ -10,7 +10,7 @@ GoreeCloud Notify is the original client. Upstream ntfy remains independently au
 | --- | --- |
 | `core.py` | ntfy validation, JSON event parsing, HTTP publish/stream, bearer auth headers, strict no-redirect behavior |
 | `storage.py` | Atomic 0600 metadata config and operating-system keyring access |
-| `worker.py` | Per-topic background subscription, deduplication, cursor replay, bounded reconnect delay |
+| `worker.py` | Per-topic background subscription, deduplication, cursor replay, bounded reconnect delay and generation fences |
 | `ui.py` | Native GTK4/libadwaita layout, setup flow, topic navigation, text compose and message cards |
 | `__main__.py` | Application launch |
 
@@ -41,3 +41,7 @@ The app does not implement server-side users, ACLs, attachments, arbitrary HTTP 
 - [Subscription API](https://docs.ntfy.sh/subscribe/api/)
 - [Publishing API](https://docs.ntfy.sh/publish/)
 - [GoreeCloud UI](https://github.com/GoreeCloud/gc-ui)
+
+## Topic removal and connection lifecycle
+
+Unsubscribing requires confirmation, saves the new topic set first, stops older streams and clears that topic's in-memory history. Switching servers increments a UI generation so already-queued GTK callbacks from an older connection are discarded. The worker independently checks cancellation and captures per-generation callbacks. The setting update is atomic; no ntfy server-side delete is issued.

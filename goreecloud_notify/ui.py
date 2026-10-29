@@ -44,6 +44,7 @@ class NotifyWindow(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application):
         super().__init__(application=app, title="GoreeCloud Notify", default_width=1050, default_height=710)
         self.settings = {"server": "", "topics": []}
+        self.connection_generation = 0
         self.messages: dict[str, list[Notification]] = {}
         self.statuses: dict[str, str] = {}
         self.rows: dict[Gtk.ListBoxRow, str] = {}
@@ -66,11 +67,14 @@ class NotifyWindow(Adw.ApplicationWindow):
         setup.connect("clicked", self._configure)
         add = Gtk.Button(icon_name="list-add-symbolic", tooltip_text="Subscribe to a topic")
         add.connect("clicked", self._add_topic)
+        remove = Gtk.Button(icon_name="list-remove-symbolic", tooltip_text="Unsubscribe from selected topic")
+        remove.connect("clicked", self._remove_topic)
         compose = Gtk.Button(label="New message")
         compose.add_css_class("suggested-action")
         compose.connect("clicked", self._compose)
         header.pack_end(compose)
         header.pack_end(add)
+        header.pack_end(remove)
         header.pack_end(setup)
         toolbar.add_top_bar(header)
 
@@ -204,14 +208,18 @@ class NotifyWindow(Adw.ApplicationWindow):
                 card.append(label(details, "notify-urgent" if note.priority >= 4 else "notify-muted"))
             self.message_list.append(card)
 
-    def _status(self, topic: str, state: str):
+    def _status(self, topic: str, state: str, epoch: int):
+        if epoch != self.connection_generation:
+            return False
         if topic in self.settings["topics"]:
             if self.statuses.get(topic) != state:
                 self.statuses[topic] = state
                 self._refresh()
         return False
 
-    def _received(self, note: Notification):
+    def _received(self, note: Notification, epoch: int):
+        if epoch != self.connection_generation:
+            return False
         if note.topic not in self.settings["topics"]:
             return False
         items = self.messages.setdefault(note.topic, [])
@@ -225,7 +233,12 @@ class NotifyWindow(Adw.ApplicationWindow):
         return False
 
     def _restart(self):
-        if not self.settings["server"]:
+        self.connection_generation += 1
+        self.manager.stop()
+        epoch = self.connection_generation
+        self.manager.on_message = lambda n: GLib.idle_add(self._received, n, epoch)
+        self.manager.on_status = lambda topic, state: GLib.idle_add(self._status, topic, state, epoch)
+        if not self.settings["server"] or not self.settings["topics"]:
             return
         try:
             token = load_token(self.settings["server"])
@@ -293,6 +306,38 @@ class NotifyWindow(Adw.ApplicationWindow):
             except NotifyError as exc:
                 self._toast(str(exc))
         dialog.connect("response", added)
+        dialog.present()
+
+    def _remove_topic(self, *_):
+        topic = self.selected_topic
+        if not topic:
+            self._toast("Select a topic to unsubscribe")
+            return
+        dialog = Adw.MessageDialog.new(
+            self, "Unsubscribe from #" + topic,
+            "Stop receiving this topic and clear its in-memory history on this device. "
+            "This does not delete server-side messages.",
+        )
+        dialog.add_response("cancel", "Cancel")
+        dialog.add_response("remove", "Unsubscribe")
+        dialog.set_response_appearance("remove", Adw.ResponseAppearance.DESTRUCTIVE)
+
+        def removed(_dlg, response):
+            if response != "remove":
+                return
+            try:
+                updated = {**self.settings, "topics": [t for t in self.settings["topics"] if t != topic]}
+                save_settings(updated)
+                self.settings = updated
+                self.messages.pop(topic, None)
+                self.statuses.pop(topic, None)
+                self.selected_topic = updated["topics"][0] if updated["topics"] else None
+                self._restart()
+                self._refresh()
+            except NotifyError as exc:
+                self._toast(str(exc))
+
+        dialog.connect("response", removed)
         dialog.present()
 
     def _compose(self, *_):
