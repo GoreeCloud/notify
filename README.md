@@ -1,6 +1,6 @@
 # GoreeCloud Notify
 
-**Original GoreeCloud clients for [ntfy](https://ntfy.sh): a native GTK4/libadwaita Linux desktop application and a supplementary responsive web application.**
+**Original GoreeCloud clients for [ntfy](https://ntfy.sh): a native GTK4/libadwaita Linux desktop application, a Python command-line client, and a supplementary responsive web application.**
 
 > **Status:** Linux-native and companion web developer previews, not Stable or production-ready. Not a fork or rebranding of ntfy. No browser deployment, mobile apps, or production services are verified here.
 
@@ -26,6 +26,17 @@ The native UI is a **prototype** pending actual GUI interaction, accessibility a
 A reproducible, source-controlled [private Docker backend template](deploy/ntfy/README.md) deploys the **upstream ntfy server** separately from the original native and companion web clients. It pins the verified v2.34.0 registry digest, requires persistent SQLite storage, denies anonymous topic access, and publishes its port to VPS loopback only.
 
 A private VPS instance has passed health, readiness, anonymous-denial and restart checks. **No client account/token, external HTTPS route, VPN/DNS integration, real authenticated client acceptance or production release is verified.** The deployment does not replace the older independent GoreeCloud Notify stack.
+
+## Terminal client (developer preview)
+
+A GTK-independent `goreecloud-notify-cli` provides ntfy server health checks, publishing, JSON Lines subscriptions, locally saved topics and interactive OS-keyring token management. It uses the same validated ntfy protocol as the desktop application and does not accept bearer tokens on the command line. From a source checkout:
+
+```bash
+python3 -m goreecloud_notify.cli --help
+python3 -m goreecloud_notify.cli config show
+```
+
+The offline Debian preview includes a separate CLI launcher alongside `goreecloud-notify`; the Python package also registers `goreecloud-notify-cli` as an entry point. See [CLI commands, credential safety, and exit codes](docs/CLI.md) and [Debian package validation](docs/PACKAGING.md). No authenticated live-server CLI acceptance is claimed.
 
 ## Companion web application (new)
 
