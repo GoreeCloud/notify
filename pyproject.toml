@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "goreecloud-notify"
+version = "0.1.0.dev0"
+description = "Native GTK4 front-end for ntfy notifications"
+requires-python = ">=3.11"
+dependencies = ["keyring>=24,<27"]
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "GoreeCloud"}]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: X11 Applications :: GTK",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+]
+
+[project.scripts]
+goreecloud-notify = "goreecloud_notify.ui:main"
+
+[tool.setuptools.packages.find]
+include = ["goreecloud_notify*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
