@@ -62,4 +62,8 @@ The web app defaults to a same-origin `/api/ntfy` reverse proxy. In development,
 
 Browser-only token handling is deliberately different from native: a web bearer token stays in volatile page memory and is lost on reload, not in `localStorage`, cookies or service workers. Non-secret topic, endpoint and color-mode preferences may be retained in `localStorage`. Notifications and search terms remain in memory. Text is inserted into DOM nodes through `textContent` (not remote markup). No notification-provided actions or remote URLs automatically execute.
 
+The loopback preview now restricts static files to the explicit application assets, validates local Host and browser Origin, denies cross-origin POST/CSRF and redirects, and bounds responses. The illustrated Caddy route uses a narrower allowlist for required ntfy endpoints and static assets; no gateway configuration was applied. Unauthorized subscription responses stop automatic retries and an explicit health probe times out after eight seconds.
+
+The web app establishes its light/dark/system palette before activating component transitions, preventing a transient first-paint color mismatch. [Web visual audit](WEB_VISUAL_AUDIT.md) captures desktop light/dark and mobile empty states in headless Chromium. Screenshots do not verify browser interactions or assistive technologies.
+
 The web app is not a claim of native operating-system completion or a shipped background-notification implementation. Browser integration, streaming proxy buffering, accessibility, VPN/private DNS, Caddy authorization and production readiness require separate acceptance evidence.

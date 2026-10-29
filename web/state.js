@@ -52,6 +52,12 @@ export function addMessage(inbox, note, selected = false) {
   if (!selected) inbox.unread += 1;
   return true;
 }
+/** Opening the combined inbox marks every visible topic as read. */
+export function markRead(inboxes, selectedTopic = null) {
+  for (const [topic, box] of inboxes) {
+    if (selectedTopic === null || topic === selectedTopic) box.unread = 0;
+  }
+}
 export function filterMessages(notes, query = "", minPriority = 1) {
   const words = String(query).trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   return notes.filter(note => {

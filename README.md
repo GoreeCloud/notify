@@ -19,7 +19,7 @@ GoreeCloud Notify is a privacy-first, self-hosting-friendly notification inbox. 
 - Failure states for authentication, rate limits, unexpected redirects, disconnection and oversized events.
 - No ad tracking, analytics, paywalls, embedded browser, or outgoing calls other than the configured ntfy API.
 
-The native UI is a **prototype** pending actual GUI interaction, accessibility and install/package testing. A passing unit test does not establish an operational deployment or cross-platform support.
+The native UI is a **prototype** pending actual GUI interaction, accessibility and install/package testing. Its packaged-launch Xvfb smoke test uses an isolated process group and software renderer so CI can clean up reliably even on runners where the GTK process remains open. A passing unit test does not establish an operational deployment or cross-platform support.
 
 ## Companion web application (new)
 

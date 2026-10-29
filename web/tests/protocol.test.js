@@ -39,7 +39,10 @@ test("publish validates body, headers, token and destination", async () => {
   assert.equal(calls.length, 1);
   for (const message of ["  ", "x".repeat(8193)]) assert.throws(() => makePublishRequest("/api/ntfy", "alerts", message));
   assert.throws(() => makePublishRequest("/api/ntfy", "alerts", "test", { title: "oops\r\nInjected" }));
-  await assert.rejects(publish(async () => ({ ok: false, status: 403 }), "/api/ntfy", "alerts", "hello"), /Access denied/);
+  await assert.rejects(
+    publish(async () => ({ ok: false, status: 403 }), "/api/ntfy", "alerts", "hello"),
+    error => error.name === "NtfyRequestError" && error.status === 403 && /Access denied/.test(error.message)
+  );
 });
 test("health recognizes booleans and rejects malformed response", async () => {
   assert.equal(await health(async () => ({ ok: true, text: async () => '{"healthy":true}' }), "/api/ntfy"), true);
@@ -81,4 +84,19 @@ test("tokens do not leak across endpoint changes", () => {
   assert.equal(chooseToken("https://one.test", "https://two.test", "secret-A", "secret-B", false), "secret-B");
   assert.equal(chooseToken("/api/ntfy", "/api/ntfy", "secret-A", "", true), "");
   assert.throws(() => chooseToken("/api/ntfy", "/api/ntfy", "", "bad\r\ntoken"), /Invalid/);
+});
+
+test("health response is bounded before it is fully read", async () => {
+  let cancelled = false;
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(4097));
+    },
+    cancel() { cancelled = true; },
+  });
+  await assert.rejects(
+    health(async () => ({ ok: true, body }), "/api/ntfy"),
+    /Oversized health response/,
+  );
+  assert.equal(cancelled, true);
 });

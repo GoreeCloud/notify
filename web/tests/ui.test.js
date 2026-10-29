@@ -21,6 +21,8 @@ test("no third-party scripts, unsafe HTML injection, or embedded credentials", (
 test("mobile, reduced-motion, and accessibility foundations exist", () => {
   assert.ok(css.includes("@media(max-width:700px)"));
   assert.ok(css.includes("prefers-reduced-motion"));
+  assert.ok(css.includes(":root:not([data-theme])"), "system light palette must precede JavaScript");
+  assert.ok(css.includes(":root.theme-ready"), "initial rendering must skip dark/light transitions");
   assert.ok(css.includes(":focus-visible"));
   for (const id of ["feed", "topics", "search", "compose-message", "settings-dialog", "topic-dialog"])
     assert.ok(html.includes('id="' + id + '"'));

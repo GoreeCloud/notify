@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#101826">
   <meta name="description" content="GoreeCloud Notify — a privacy-first browser client for your ntfy server.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'; ">
   <title>GoreeCloud Notify</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
@@ -33,7 +33,7 @@
     </aside>
     <div class="workspace">
       <header class="topbar">
-        <div class="breadcrumb"><span class="crumb-mark">●</span> NOTIFICATIONS <span class="breadcrumb-chevron">/</span> <span id="breadcrumb-topic">Overview</span></div>
+        <div class="breadcrumb"><span class="crumb-mark">●</span> <span class="breadcrumb-root">NOTIFICATIONS</span> <span class="breadcrumb-chevron">/</span> <span id="breadcrumb-topic">Overview</span></div>
         <div class="top-actions">
           <button class="icon-button" type="button" id="top-settings" aria-label="Connection settings" title="Connection settings">⚙</button>
           <button class="icon-button" type="button" id="health-button" aria-label="Check server health" title="Check server health">↻</button>
@@ -43,7 +43,7 @@
       </header>
       <main class="main-content" id="main">
         <div class="hero">
-          <div><p class="eyebrow">YOUR NOTIFICATION CENTER</p><h1 id="page-title">Stay in the loop<span class="accent-dot">.</span></h1><p id="page-description">All your signals, in one calm place. Connected to your own ntfy server.</p></div>
+          <div><p class="eyebrow">YOUR NOTIFICATION CENTER</p><h1 id="page-title">Stay in the loop<span class="accent-dot">.</span></h1><p id="page-description">All your signals, in one calm place. Ready for your own ntfy server.</p></div>
           <div class="hero-emblem" aria-hidden="true"><span>✦</span></div>
         </div>
         <section class="stats" aria-label="Overview">
