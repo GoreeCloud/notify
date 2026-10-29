@@ -6,6 +6,8 @@ I am developing GoreeCloud Notify as a first-party **native GTK4/libadwaita Linu
 
 I use a dependency-free offline package builder rather than an embedded website. It stages original Python/GTK source, an operating-system desktop entry, a scalable GoreeCloud icon, and a launcher. Dependencies are supplied by Debian/Ubuntu system packages; I do not bundle or download an ntfy server, token, or private configuration.
 
+The unsigned developer-preview `.deb` includes the GTK executable `goreecloud-notify` and the separate native Python CLI executable `goreecloud-notify-cli`. The CLI uses the system OS keyring and does not require a GTK process. See [CLI usage](CLI.md).
+
 ## Build without changing system state
 
 On a supported Debian/Ubuntu developer machine with `dpkg-deb`:
