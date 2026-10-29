@@ -40,6 +40,22 @@ ntfy access tokens inherit their user's access; they are not independently topic
 - SQLite message cache retention is 24 hours, and authentication and message databases are persistent. Owner-only host directory/file permissions are mandatory. Backup and restore those stores securely, without committing or exporting secrets into CI.
 - Existing Caddy, VPN, DNS, old GoreeCloud Notify stack, and independent outage-monitor configuration remain unchanged by this setup.
 
+## Online SQLite backup and isolated restore verification
+
+The [backup utility](../../tools/backup_ntfy_sqlite.py) uses Python's standard-library SQLite online-backup API. It does **not** copy a live SQLite file while its write-ahead log may contain uncheckpointed data. It creates a private pending directory, snapshots `auth.db` and `cache.db`, normalizes only the **backup copies** to standalone files, runs SQLite integrity checks, and atomically publishes the completed backup. It then copies the result to an isolated temporary restore directory and validates both databases. It never reads out or prints rows, tokens, hashes, message bodies or other secrets.
+
+On the VPS, copy the utility **outside the repository** into a private owner-only maintenance directory, and use an owner-owned directory to store snapshots. Run it as the owner of the databases:
+
+```sh
+python3 -B backup_ntfy_sqlite.py \
+  --source /path/to/private/ntfy/data \
+  --backups /path/to/private/ntfy/backups
+```
+
+Required filesystem permissions: source data directory `0700`, each database `0600`, backup root `0700`. The utility rejects symlink sources and unsafe permissions and removes only an incomplete staging snapshot when verification fails. **It never deletes old backups.** The database contents remain private on the destination machine; do not check backup files into GitHub or allow CI to upload them.
+
+**Verified VPS execution (October 29, 2026):** One snapshot of the active instance succeeded with both databases intact, followed by an isolated restore/integrity check while ntfy remained healthy. The backup directory and nested snapshot use mode `0700`, database copies mode `0600`. This validates a *local* recoverable snapshot, not off-host disaster recovery, scheduled rotation, encrypted offsite storage, credential provisioning or a full service restoration. Check safe off-host backup storage and future restore/rotation before release acceptance.
+
 ## Operations and rollback
 
 ```sh
@@ -57,7 +73,7 @@ Do not run `down -v` or delete the `data/` directory: that may destroy message a
 
 - Initial account/token provisioning using a supported protected workflow.
 - Authorized end-to-end publish/subscribe and reconnect acceptance.
-- Data backup/restore exercise and monitoring acceptance.
+- Full service recovery and off-host encrypted backup/retention acceptance (a verified local SQLite snapshot and isolated restore check are available).
 - Native/web client connectivity, approved private HTTPS/NetBird gateway integration, DNS and network exposure review.
 - Independent investigation of any historical GoreeCloud Notify watchdog alert (the older application is a separate service).
 
