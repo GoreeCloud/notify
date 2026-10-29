@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import sqlite3
 import stat
 import subprocess
@@ -23,7 +24,7 @@ from urllib.request import urlopen
 AGE_LIMIT = timedelta(hours=36)
 SNAPSHOT_NAME = re.compile(r"^ntfy-([0-9]{8}T[0-9]{6}Z)-[0-9a-f]{8}$")
 DB_NAMES = ("auth.db", "cache.db")
-CHECKS = ("backend", "backup_worker", "loopback_binding", "readiness", "recent_snapshot", "scheduled_backup", "snapshot_integrity")
+CHECKS = ("backend", "backup_worker", "backend_hardening", "worker_hardening", "loopback_binding", "readiness", "recent_snapshot", "scheduled_backup", "snapshot_integrity", "backup_slots_available", "backup_disk_reserve")
 
 
 def container_status(name: str, run=subprocess.run) -> tuple[str, str, str]:
@@ -43,9 +44,68 @@ def loopback_only(name: str, run=subprocess.run) -> bool:
     response = run(["docker", "port", name, "8080/tcp"], text=True, capture_output=True,
                    timeout=8, check=False)
     entries = [line.strip() for line in response.stdout.splitlines() if line.strip()]
-    return response.returncode == 0 and bool(entries) and all(
-        line.startswith("127.0.0.1:") for line in entries
+    # Exact host mapping matters: a different loopback port would silently
+    # break local clients even if it did not expose the backend publicly.
+    return response.returncode == 0 and entries == ["127.0.0.1:8792"]
+
+
+def container_hardening(name: str, run=subprocess.run) -> bool:
+    """Inspect selected Docker fields, never print the raw host configuration."""
+    response = run(
+        ["docker", "inspect", "--format",
+         "{{json .HostConfig}}|{{json .Mounts}}|{{.Config.User}}", name],
+        text=True, capture_output=True, timeout=8, check=False,
     )
+    if response.returncode:
+        return False
+    try:
+        host_json, mounts_json, uid = response.stdout.strip().split("|", 2)
+        cfg, mounts = json.loads(host_json), json.loads(mounts_json)
+    except (ValueError, TypeError):
+        return False
+    if not isinstance(cfg, dict) or not isinstance(mounts, list):
+        return False
+    if (uid != "1001:1001" or not cfg.get("ReadonlyRootfs")
+            or cfg.get("Privileged") is not False
+            or "ALL" not in (cfg.get("CapDrop") or [])
+            or "no-new-privileges:true" not in (cfg.get("SecurityOpt") or [])):
+        return False
+    access = {item.get("Destination"): item.get("RW") for item in mounts
+              if isinstance(item, dict)}
+    if name == "goreecloud-ntfy-backup":
+        return (cfg.get("NetworkMode") == "none"
+                and not cfg.get("PortBindings")
+                and access.get("/source") is False
+                and access.get("/snapshots") is True
+                and access.get("/app/backup_ntfy_sqlite.py") is False
+                and access.get("/app/ntfy_backup_scheduler.py") is False)
+    if name == "goreecloud-ntfy":
+        ports = cfg.get("PortBindings") or {}
+        return (cfg.get("NetworkMode") not in ("host", "none")
+                and ports == {"8080/tcp": [{"HostIp": "127.0.0.1", "HostPort": "8792"}]}
+                and access.get("/var/lib/ntfy") is True)
+    return False
+
+
+def backup_capacity(backups: Path, folder: Path | None, disk_usage=shutil.disk_usage) -> tuple[bool, bool]:
+    """Warn five snapshots before hard limit; reserve 1 GiB plus two copies."""
+    if not private_file(backups, directory=True) or folder is None:
+        return False, False
+    valid = [item for item in backups.iterdir()
+             if SNAPSHOT_NAME.fullmatch(item.name) and private_file(item, directory=True)]
+    available_slots = len(valid) < 40
+    try:
+        estimated = sum((folder / name).stat().st_size for name in DB_NAMES
+                        if private_file(folder / name, directory=False))
+        if estimated <= 0 or not all(private_file(folder / name, directory=False)
+                                      for name in DB_NAMES):
+            return available_slots, False
+        # Uses the worker's reserve policy, including an independent
+        # temporary restore copy, before a new backup is attempted.
+        enough = disk_usage(backups).free >= 1024 ** 3 + 2 * estimated
+    except OSError:
+        enough = False
+    return available_slots, enough
 
 
 def ready(url: str = "http://127.0.0.1:8792/v1/health", fetch=urlopen) -> bool:
@@ -124,14 +184,19 @@ def inspect(backups: Path, *, now: datetime | None = None,
     backend = container_status("goreecloud-ntfy", run)
     worker = container_status("goreecloud-ntfy-backup", run)
     recent, folder = latest_snapshot(backups, now)
+    slots, reserve = backup_capacity(backups, folder)
     return {
         "backend": backend[0:2] == ("running", "healthy"),
         "backup_worker": worker[0:3] == ("running", "healthy", "none"),
+        "backend_hardening": container_hardening("goreecloud-ntfy", run),
+        "worker_hardening": container_hardening("goreecloud-ntfy-backup", run),
         "loopback_binding": loopback_only("goreecloud-ntfy", run),
         "readiness": ready(fetch=fetch),
         "recent_snapshot": recent,
         "scheduled_backup": scheduled_backup_present(folder, now),
         "snapshot_integrity": snapshot_integrity(folder),
+        "backup_slots_available": slots,
+        "backup_disk_reserve": reserve,
     }
 
 

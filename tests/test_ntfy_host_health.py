@@ -8,7 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from tools.ntfy_host_health import (
-    container_status, inspect, latest_snapshot, loopback_only,
+    backup_capacity, container_hardening, container_status, inspect, latest_snapshot, loopback_only,
     private_file, ready, snapshot_integrity, scheduled_backup_present,
 )
 
@@ -32,6 +32,22 @@ def fixtures(tmp_path: Path):
 
 def docker(cmd, **kwargs):
     if cmd[1] == "inspect":
+        if "{{json .HostConfig}}" in cmd[3]:
+            worker = cmd[-1] == "goreecloud-ntfy-backup"
+            cfg = {
+                "ReadonlyRootfs": True, "Privileged": False,
+                "CapDrop": ["ALL"], "SecurityOpt": ["no-new-privileges:true"],
+                "NetworkMode": "none" if worker else "goreecloud-ntfy_default",
+                "PortBindings": None if worker else {
+                    "8080/tcp": [{"HostIp": "127.0.0.1", "HostPort": "8792"}]},
+            }
+            mounts = (
+                [{"Destination": "/source", "RW": False}, {"Destination": "/snapshots", "RW": True},
+                 {"Destination": "/app/backup_ntfy_sqlite.py", "RW": False},
+                 {"Destination": "/app/ntfy_backup_scheduler.py", "RW": False}]
+                if worker else [{"Destination": "/var/lib/ntfy", "RW": True}]
+            )
+            return SimpleNamespace(returncode=0, stdout=json.dumps(cfg) + "|" + json.dumps(mounts) + "|1001:1001\n")
         if cmd[-1] == "goreecloud-ntfy":
             return SimpleNamespace(returncode=0, stdout="running|healthy|goreecloud-ntfy_default\n")
         return SimpleNamespace(returncode=0, stdout="running|healthy|none\n")
@@ -138,3 +154,63 @@ def test_daily_backup_due_check_detects_missed_schedule(tmp_path):
     early = tomorrow.replace(hour=3, minute=45)
     assert scheduled_backup_present(folder, early)
     assert scheduled_backup_present(folder, NOW)
+
+def test_hardening_guardrails_reject_escalation_and_unexpected_bindings(tmp_path):
+    backups, _ = fixtures(tmp_path)
+    assert container_hardening("goreecloud-ntfy", docker)
+    assert container_hardening("goreecloud-ntfy-backup", docker)
+    assert all(inspect(backups, now=NOW, run=docker, fetch=fetch).values())
+
+    def unsafe(cmd, **kwargs):
+        response = docker(cmd, **kwargs)
+        if cmd[1] == "inspect" and "{{json .HostConfig}}" in cmd[3]:
+            host, mounts, user = response.stdout.strip().split("|")
+            cfg = json.loads(host)
+            cfg["Privileged"] = True
+            return SimpleNamespace(returncode=0, stdout=json.dumps(cfg) + "|" + mounts + "|" + user)
+        return response
+
+    assert not container_hardening("goreecloud-ntfy", unsafe)
+    assert not container_hardening("goreecloud-ntfy-backup", unsafe)
+    assert not inspect(backups, now=NOW, run=unsafe, fetch=fetch)["backend_hardening"]
+
+    def bad_worker_mount(cmd, **kwargs):
+        response = docker(cmd, **kwargs)
+        if cmd[1] == "inspect" and "{{json .HostConfig}}" in cmd[3] and cmd[-1] == "goreecloud-ntfy-backup":
+            host, mounts, user = response.stdout.strip().split("|")
+            m = json.loads(mounts)
+            m[0]["RW"] = True
+            return SimpleNamespace(returncode=0, stdout=host + "|" + json.dumps(m) + "|" + user)
+        return response
+
+    assert not container_hardening("goreecloud-ntfy-backup", bad_worker_mount)
+
+
+def test_capacity_warns_before_snapshot_limit_and_disk_exhaustion(tmp_path):
+    backups, folder = fixtures(tmp_path)
+    slots, reserve = backup_capacity(backups, folder)
+    assert slots and reserve
+    import shutil
+    for i in range(39):
+        (backups / f"ntfy-202610{i % 28 + 1:02d}T031500Z-{i:08x}").mkdir(mode=0o700)
+    slots, reserve = backup_capacity(backups, folder)
+    assert not slots and reserve
+    assert inspect(backups, now=NOW, run=docker, fetch=fetch)["backup_slots_available"] is False
+    # File size is nonzero but reserve must not use bogus disk capacity.
+    low_disk = lambda _path: SimpleNamespace(free=100)
+    assert backup_capacity(backups, folder, disk_usage=low_disk) == (False, False)
+
+
+def test_other_port_and_public_binding_rejected():
+    for value in ("127.0.0.1:8793\n", "0.0.0.0:8792\n", "127.0.0.1:8792\n0.0.0.0:8792\n"):
+        def returned(cmd, **kwargs):
+            if cmd[1] == "port":
+                return SimpleNamespace(returncode=0, stdout=value)
+            return docker(cmd, **kwargs)
+        assert not loopback_only("goreecloud-ntfy", returned)
+
+
+def test_invalid_docker_hardening_metadata_rejected():
+    def malformed(cmd, **kwargs):
+        return SimpleNamespace(returncode=0, stdout="not-json|[]|1001:1001")
+    assert not container_hardening("goreecloud-ntfy", malformed)
