@@ -53,3 +53,13 @@ Unsubscribing requires confirmation, saves the new topic set first, stops older 
 ## Local search and priority filtering
 
 The native search entry filters only the selected topic's at-most-200 messages currently in process memory. Each word must match case-insensitively within the title, body, tags or topic. The priority chooser limits results to all, high/urgent, or urgent-only. Search terms are not persisted, logged or transmitted, and a filtered-out message is not removed from memory. This is not a server-wide historical search.
+
+## Supplementary web-client boundary
+
+The separately developed [web application](../web/README.md) provides a browser experience while leaving the GTK4/Linux native app intact. It uses its own original HTML/CSS/JS controls; the common integration contract is ntfy's supported API, not a browser wrapper of the native app or an upstream UI rebrand.
+
+The web app defaults to a same-origin `/api/ntfy` reverse proxy. In development, `web/dev_server.py` binds only to `127.0.0.1` and forwards explicitly allowlisted calls to a fixed `NTFY_UPSTREAM` with no automatic redirects. A Caddy example is supplied but **has not been deployed**. Private backend exposure and hostname assignment are independent, governed operations.
+
+Browser-only token handling is deliberately different from native: a web bearer token stays in volatile page memory and is lost on reload, not in `localStorage`, cookies or service workers. Non-secret topic, endpoint and color-mode preferences may be retained in `localStorage`. Notifications and search terms remain in memory. Text is inserted into DOM nodes through `textContent` (not remote markup). No notification-provided actions or remote URLs automatically execute.
+
+The web app is not a claim of native operating-system completion or a shipped background-notification implementation. Browser integration, streaming proxy buffering, accessibility, VPN/private DNS, Caddy authorization and production readiness require separate acceptance evidence.

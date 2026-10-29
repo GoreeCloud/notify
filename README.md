@@ -1,8 +1,8 @@
 # GoreeCloud Notify
 
-**An original, native GTK4/libadwaita desktop client for [ntfy](https://ntfy.sh).**
+**Original GoreeCloud clients for [ntfy](https://ntfy.sh): a native GTK4/libadwaita Linux desktop application and a supplementary responsive web application.**
 
-> **Status:** Linux developer preview, not Stable or production-ready. Not a fork, replacement, or rebranding of the upstream ntfy server. No binaries, mobile apps, or deployed GoreeCloud Notify service have been verified as delivered.
+> **Status:** Linux-native and companion web developer previews, not Stable or production-ready. Not a fork or rebranding of ntfy. No browser deployment, mobile apps, or production services are verified here.
 
 GoreeCloud Notify is a privacy-first, self-hosting-friendly notification inbox. It connects to existing ntfy instances through their documented HTTP API and provides a native Linux desktop experience. This project follows the [GoreeCloud UI](https://github.com/GoreeCloud/gc-ui) design authority while using platform-native GTK4/libadwaita widgets and accessibility conventions. Cross-platform design parity and formal GC UI acceptance remain unverified.
 
@@ -20,6 +20,21 @@ GoreeCloud Notify is a privacy-first, self-hosting-friendly notification inbox. 
 - No ad tracking, analytics, paywalls, embedded browser, or outgoing calls other than the configured ntfy API.
 
 The native UI is a **prototype** pending actual GUI interaction, accessibility and install/package testing. A passing unit test does not establish an operational deployment or cross-platform support.
+
+## Companion web application (new)
+
+A real, original, dependency-free **browser application** is provided in [web/](web/README.md), alongside—not replacing—the Linux native client. It has a responsive dark/light interface, all-topic and individual-topic feeds, streaming subscription/reconnect, in-memory search and priority filters, unread counts, text publishing, and read-only server health checks.
+
+For a loopback-only web UI preview:
+
+```bash
+python3 web/dev_server.py --port 8765
+# Visit http://127.0.0.1:8765/
+```
+
+For a locally managed ntfy instance running on loopback, start with `NTFY_UPSTREAM=http://127.0.0.1:8080`. For remote backends, use explicit HTTPS and a reviewed same-origin private reverse proxy. The web client does **not** store bearer tokens or message bodies persistently; only non-secret endpoint, topic, and theme settings may be stored. The browser app is **not** an installable native OS replacement.
+
+See [web setup, controls, deployment safety and test instructions](web/README.md). The proposed Caddy development route is a **template only**—no DNS, access-control policy, gateway, production backend, or public exposure has been changed.
 
 ## Requirements and developer launch (Linux)
 
@@ -54,11 +69,12 @@ Settings live at `$XDG_CONFIG_HOME/goreecloud/notify.json` (default: `~/.config/
 ```bash
 python3 -m compileall -q goreecloud_notify tests
 python3 -m pytest -q
+cd web && npm run check && npm test
 ```
 
 ## Architecture and roadmap
 
-See [Architecture](docs/ARCHITECTURE.md), [Linux packaging](docs/PACKAGING.md), and [Roadmap](docs/ROADMAP.md). The ntfy API supports more capabilities than this client currently implements, including action buttons, attachment transfer, priority filters and delayed sends. Do not assume those capabilities are present here.
+See [Architecture](docs/ARCHITECTURE.md), [Linux packaging](docs/PACKAGING.md), [companion web app](web/README.md), and [Roadmap](docs/ROADMAP.md). The ntfy API supports more capabilities than this client currently implements, including action buttons, attachment transfer, priority filters and delayed sends. Do not assume those capabilities are present here.
 
 ## Dependency attribution
 
