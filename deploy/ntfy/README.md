@@ -85,15 +85,26 @@ docker compose -f compose.yaml -f backup.compose.yaml stop backup
 
 ## Read-only host assessment and failure signals
 
-Use the [host health probe](../../tools/ntfy_host_health.py) to verify both containers, local-only port binding, ntfy health, the latest SQLite snapshot's age, whether today's scheduled 03:15 UTC backup exists after a one-hour grace period, and the actual integrity of both saved database files. Install a copy of the script into the owner-only `maintenance/` directory; no Docker control socket is mounted in a container and no ntfy credentials are needed. Run as the same unprivileged owner that owns the backup files:
+Use the [host health probe](../../tools/ntfy_host_health.py) to verify both containers, their expected non-root and capability-restricted Docker configurations, exact loopback-only port mapping, ntfy health, the latest SQLite snapshot's age, whether today's scheduled 03:15 UTC backup exists after a one-hour grace period, SQLite snapshot integrity, snapshot-count headroom, and a minimum free-disk reserve for the next verified backup and isolated restore. Install a copy of the script into the owner-only `maintenance/` directory; no Docker control socket is mounted in a container and no ntfy credentials are needed. Run as the same unprivileged owner that owns the backup files:
 
 ```sh
 python3 -B ntfy_host_health.py --backups /path/to/private/ntfy/backups --json
 ```
 
-The script exits **0** when all six checks pass, **1** if a check fails, and **2** on an unexpected probe error. JSON keys and Boolean results contain no secrets, server configuration values, topics, or message content. A red check should be triaged without restarting unrelated services. This probe is read-only and does **not** deliver alerts by itself.
+The script exits **0** when all eleven checks pass, **1** if a check fails, and **2** on an unexpected probe error. JSON keys and Boolean results contain no secrets, server configuration values, topics, or message content. A red check should be triaged without restarting unrelated services. This probe is read-only and does **not** deliver alerts by itself.
 
-**Observed October 29, 2026:** all seven checks passed on the running private ntfy host. Separately, an unrelated older `netbird-ntfy-monitor.service` unit was found failed, with its timer inactive. That older monitoring path was not changed, and its recovery is tracked separately: a healthy new ntfy container cannot retroactively clear legacy alerts.
+**Observed October 29, 2026:** all eleven checks passed on the running private ntfy host, including Docker hardening and projected backup capacity. Separately, an unrelated older `netbird-ntfy-monitor.service` unit was found failed, with its timer inactive. That older monitoring path was not changed, and its recovery is tracked separately: a healthy new ntfy container cannot retroactively clear legacy alerts.
+
+### Drift and capacity alerts
+
+The extra checks detect operational risk before a conventional Docker healthcheck does:
+
+- `backend_hardening`: verifies the expected UID, read-only root filesystem, no Linux capabilities or privileged mode, no-new-privileges, correct published port and data bind.
+- `worker_hardening`: checks the offline network namespace, privilege restrictions, absent public ports, read-only live SQLite and maintenance mounts, and writable backup directory.
+- `backup_slots_available`: becomes unhealthy at **40 snapshots**, leaving five slots before the worker's non-destructive **45-snapshot** hard limit; operators must establish authorized archival/retention instead of deleting silently.
+- `backup_disk_reserve`: requires at least **1 GiB plus twice the current snapshot database sizes**, allowing space for an online snapshot and independent temporary restore.
+
+All checks return nonsecret Boolean results and stop at *read-only detection*. Investigate failed checks using a separately authorized operational workflow; never automatically reconfigure Docker, open ports, delete snapshots, or restart other services. The worker itself remains non-destructive.
 
 Monitoring still requires a genuinely scheduled external observer and a proven notification route. Until an observer is configured and has successfully delivered a controlled test alert, treat the monitoring capability as **probe-ready but not delivery-verified**.
 
