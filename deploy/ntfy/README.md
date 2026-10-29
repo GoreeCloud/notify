@@ -108,6 +108,30 @@ All checks return nonsecret Boolean results and stop at *read-only detection*. I
 
 Monitoring still requires a genuinely scheduled external observer and a proven notification route. Until an observer is configured and has successfully delivered a controlled test alert, treat the monitoring capability as **probe-ready but not delivery-verified**.
 
+## Offline application-level restore drill
+
+The [restore drill](../../tools/ntfy_restore_drill.py) tests whether a
+previously verified snapshot starts the pinned ntfy application, not just
+whether SQLite can read it. The tool creates an owner-only disposable copy,
+launches a non-root Docker container with `--network=none`, no published
+ports, a read-only root filesystem and dropped capabilities, then checks
+ntfy's internal health and readiness endpoints. It stops the disposable
+container and cleans the copied databases afterward.
+
+Run the utility on the authorized host with `--snapshot` set to an
+existing private snapshot directory and `--staging-root` set to a separate
+owner-only maintenance directory. These folders must not overlap.
+The script does not modify the main backend or its database, enable a gateway,
+or print private records. Its image is pinned to the known ntfy v2.34.0
+registry digest.
+
+**Verified October 29, 2026:** an application-level restore from the
+existing local snapshot passed both internal probes. The disposable container
+and staging directory were verified absent afterward. The primary backend
+and offline backup worker remained healthy. This is an on-host application
+startup check, not an off-host recovery, backup-encryption assessment, or
+authenticated client acceptance.
+
 ## Operations and rollback
 
 ```sh
