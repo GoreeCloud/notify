@@ -40,8 +40,11 @@ def test_snapshot_today_is_not_duplicated_and_has_isolated_restore(tmp_path):
     source, backups = create_test_environment(tmp_path)
     assert run_once(source, backups, now()) is True
     assert len(snapshot_times(backups)) == 1
-    assert healthcheck(backups, now())
-    assert run_once(source, backups, now()) is False
+    captured = snapshot_times(backups)[-1]
+    # Snapshot creation is based on live UTC; a fixed historical test clock
+    # can legitimately precede the just-created snapshot.
+    assert healthcheck(backups, captured + timedelta(minutes=1))
+    assert run_once(source, backups, captured + timedelta(minutes=1)) is False
     assert len(snapshot_times(backups)) == 1
     assert all(f.stat().st_mode & 0o077 == 0 for folder in backups.iterdir() for f in folder.iterdir())
 

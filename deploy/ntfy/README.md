@@ -83,6 +83,20 @@ docker compose -f compose.yaml -f backup.compose.yaml stop backup
 
 **Verified October 29, 2026:** the worker started successfully on the authorized VPS, with network mode `none`, all capabilities dropped, read-only live database bind, healthy status and a successful explicit scheduler healthcheck. On its first start, it recognized the verified same-day snapshot and did not create a duplicate. The first future scheduled job has **not** yet been observed; daily continuity, recovery after reboots, alert routing, retention authorization, off-host encryption and disaster-recovery drills remain open.
 
+## Read-only host assessment and failure signals
+
+Use the [host health probe](../../tools/ntfy_host_health.py) to verify both containers, local-only port binding, ntfy health, the latest SQLite snapshot's age, whether today's scheduled 03:15 UTC backup exists after a one-hour grace period, and the actual integrity of both saved database files. Install a copy of the script into the owner-only `maintenance/` directory; no Docker control socket is mounted in a container and no ntfy credentials are needed. Run as the same unprivileged owner that owns the backup files:
+
+```sh
+python3 -B ntfy_host_health.py --backups /path/to/private/ntfy/backups --json
+```
+
+The script exits **0** when all six checks pass, **1** if a check fails, and **2** on an unexpected probe error. JSON keys and Boolean results contain no secrets, server configuration values, topics, or message content. A red check should be triaged without restarting unrelated services. This probe is read-only and does **not** deliver alerts by itself.
+
+**Observed October 29, 2026:** all seven checks passed on the running private ntfy host. Separately, an unrelated older `netbird-ntfy-monitor.service` unit was found failed, with its timer inactive. That older monitoring path was not changed, and its recovery is tracked separately: a healthy new ntfy container cannot retroactively clear legacy alerts.
+
+Monitoring still requires a genuinely scheduled external observer and a proven notification route. Until an observer is configured and has successfully delivered a controlled test alert, treat the monitoring capability as **probe-ready but not delivery-verified**.
+
 ## Operations and rollback
 
 ```sh
