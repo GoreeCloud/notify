@@ -15,7 +15,7 @@ jobs:
       - name: Install system GTK libraries and test tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 python3-pytest python3-keyring
+          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 python3-pytest python3-keyring dpkg-dev desktop-file-utils xvfb xauth
       - name: Compile source
         run: /usr/bin/python3 -m compileall -q goreecloud_notify tests
       - name: Unit tests
@@ -23,3 +23,17 @@ jobs:
       - name: GTK introspection import
         run: |
           /usr/bin/python3 -c "import gi; gi.require_version('Gtk','4.0'); gi.require_version('Adw','1'); from gi.repository import Gtk, Adw; print(Gtk.get_major_version())"
+      - name: Build native Linux developer-preview package
+        run: /usr/bin/python3 tools/build_deb.py --output-dir dist
+      - name: Validate Debian payload
+        run: |
+          dpkg-deb --info dist/*.deb
+          dpkg-deb --contents dist/*.deb
+          desktop-file-validate packaging/linux/com.goreecloud.Notify.desktop
+      - name: Upload unsigned preview package for testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: goreecloud-notify-linux-deb-unsigned-preview
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 7

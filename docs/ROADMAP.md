@@ -6,7 +6,7 @@
 | P0 | Integration tests against an isolated ntfy container with ACLs | End-to-end read/publish, auth denial, reconnect, rate limit |
 | P0 | Stop subscriptions on server change and validate clean shutdown | No obsolete-stream messages after switch, bounded thread counts |
 | P0 | Native Linux packaging, desktop entry, icon, application ID | Installed package, start/stop, uninstall, runtime verification |
-| P1 | Connection diagnostics / independent service health view | Explicit probe results separate client status from server health |
+| P1 | Expand connection diagnostics and independent service health view | The read-only health probe exists; live diagnostics, ACL tests and independent watchdog integration remain unverified |
 | P1 | Notification filtering, search, mute, unread, retention controls | Model and interaction tests; no private-text leakage |
 | P1 | ntfy actions and attachments under explicit authorization | Consent, safe destinations, local file security, permissions tests |
 | P1 | Native desktop notification integration | Opt-in OS notifications and verified permission/lifecycle |

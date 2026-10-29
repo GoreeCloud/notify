@@ -14,6 +14,7 @@ GoreeCloud Notify is a privacy-first, self-hosting-friendly notification inbox. 
 - ndjson message streaming, ten-minute replay on first connect, resume from latest message ID, bounded reconnection delay, duplicate suppression, and stale-connection cancellation.
 - Publish text notifications with title, priority (1–5), and tags.
 - Optional Bearer token in the **OS keyring**, never in the local JSON settings file.
+- Read-only ntfy server-health check with explicit healthy/unhealthy/error states, separate from subscription status.
 - Failure states for authentication, rate limits, unexpected redirects, disconnection and oversized events.
 - No ad tracking, analytics, paywalls, embedded browser, or outgoing calls other than the configured ntfy API.
 
@@ -35,7 +36,9 @@ cd notify
 /usr/bin/python3 -m goreecloud_notify
 ```
 
-This is a source developer launch, **not** a verified installable package. No self-hosted server address, topic, or token is embedded in the source.
+For an offline **unsigned native Debian/Ubuntu developer-preview package**, run `python3 tools/build_deb.py --output-dir dist` with `dpkg-deb` available. See [Linux packaging](docs/PACKAGING.md) for inspection and optional manual installation. This is not a verified production installer.
+
+The source launch above is a developer launch, **not** proof of a verified installable package. No self-hosted server address, topic, or token is embedded in the source.
 
 ## First run
 
@@ -54,7 +57,7 @@ python3 -m pytest -q
 
 ## Architecture and roadmap
 
-See [Architecture](docs/ARCHITECTURE.md) and [Roadmap](docs/ROADMAP.md). The ntfy API supports more capabilities than this client currently implements, including action buttons, attachment transfer, priority filters and delayed sends. Do not assume those capabilities are present here.
+See [Architecture](docs/ARCHITECTURE.md), [Linux packaging](docs/PACKAGING.md), and [Roadmap](docs/ROADMAP.md). The ntfy API supports more capabilities than this client currently implements, including action buttons, attachment transfer, priority filters and delayed sends. Do not assume those capabilities are present here.
 
 ## Dependency attribution
 
