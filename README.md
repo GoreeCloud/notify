@@ -21,6 +21,12 @@ GoreeCloud Notify is a privacy-first, self-hosting-friendly notification inbox. 
 
 The native UI is a **prototype** pending actual GUI interaction, accessibility and install/package testing. Its packaged-launch Xvfb smoke test uses an isolated process group and software renderer so CI can clean up reliably even on runners where the GTK process remains open. A passing unit test does not establish an operational deployment or cross-platform support.
 
+## Upstream ntfy Docker backend (private preview)
+
+A reproducible, source-controlled [private Docker backend template](deploy/ntfy/README.md) deploys the **upstream ntfy server** separately from the original native and companion web clients. It pins the verified v2.34.0 registry digest, requires persistent SQLite storage, denies anonymous topic access, and publishes its port to VPS loopback only.
+
+A private VPS instance has passed health, readiness, anonymous-denial and restart checks. **No client account/token, external HTTPS route, VPN/DNS integration, real authenticated client acceptance or production release is verified.** The deployment does not replace the older independent GoreeCloud Notify stack.
+
 ## Companion web application (new)
 
 A real, original, dependency-free **browser application** is provided in [web/](web/README.md), alongside—not replacing—the Linux native client. It has a responsive dark/light interface, all-topic and individual-topic feeds, streaming subscription/reconnect, in-memory search and priority filters, unread counts, text publishing, and read-only server health checks.
