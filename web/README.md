@@ -2,6 +2,10 @@
 
 > **Status: development preview only.** This is an original browser client that complements, **not replaces**, GoreeCloud Notify's native GTK4/Linux application. No public DNS, Caddy gateway route, live deployment or independently validated browser release has been established by this repository.
 
+## Preview and visual QA
+
+See the [Chromium screenshot-led visual audit](../docs/WEB_VISUAL_AUDIT.md) for desktop light/dark and mobile empty-state captures. The images are documentation, not evidence of live ntfy integration or completed keyboard/screen-reader acceptance.
+
 ## First-run capabilities
 
 - Responsive GC UI-aligned Canvas/Surface/Lens-inspired navigation with dark and light themes and accessible native HTML controls.
@@ -57,4 +61,6 @@ ntfy is independently authored and retains its own licenses and upstream API sem
 
 ## Acceptance and known limitations
 
-Health responses are capped during streaming reads; a health check is canceled after eight seconds or on server changes. Access denials (HTTP 401/403) stop automatic retries until the connection is reconfigured. Viewing the combined inbox marks its watched topics as read. No permissions or server-side message state are modified by reading.\n\nThis is an early browser implementation, not verified as a production application. Before declaring support, complete real browser interaction, mobile viewport, keyboard/screen-reader, end-to-end protected ntfy integration, reverse-proxy stream buffering, multi-topic reconnection, session security, accessibility, performance and deployment checks. Browser push notifications and persistent offline inbox are intentionally **not** shipped; there is no service worker or background receiver.
+Health responses are capped during streaming reads; a health check is canceled after eight seconds or on server changes. Access denials (HTTP 401/403) stop automatic retries until the connection is reconfigured. Viewing the combined inbox marks its watched topics as read. No permissions or server-side message state are modified by reading.
+
+This is an early browser implementation, not verified as a production application. Before declaring support, complete real browser interaction, mobile viewport, keyboard/screen-reader, end-to-end protected ntfy integration, reverse-proxy stream buffering, multi-topic reconnection, session security, accessibility, performance and deployment checks. Browser push notifications and persistent offline inbox are intentionally **not** shipped; there is no service worker or background receiver.

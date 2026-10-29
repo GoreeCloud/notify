@@ -189,6 +189,7 @@ function openDialog(id) { $(id).showModal(); }
 function closeDialog(id) { $(id).close(); }
 function setup() {
   setTheme();
+  requestAnimationFrame(() => document.documentElement.classList.add("theme-ready"));
   $("top-settings").addEventListener("click", () => $("open-settings").click());
   $("open-settings").addEventListener("click", () => {
     $("server-input").value = settings.endpoint;
