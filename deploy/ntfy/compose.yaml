@@ -1,0 +1,41 @@
+# Reproducible private ntfy Docker backend for GoreeCloud Notify.
+# Copy this file OUTSIDE the public Git checkout before deploying.
+# Do not commit auth.db, cache.db, credentials or real message data.
+name: goreecloud-ntfy
+
+services:
+  ntfy:
+    image: binwiederhier/ntfy:v2.34.0@sha256:901e14503d3f605f445be0e68f2ac71f0aa73391897ce6ceb599f8c48d8b3792
+    container_name: goreecloud-ntfy
+    command: ["serve"]
+    restart: unless-stopped
+    init: true
+    user: "1001:1001" # Change to owner UID:GID of private host data if necessary.
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      TZ: UTC
+      NTFY_LISTEN_HTTP: ":8080"
+      NTFY_CACHE_FILE: /var/lib/ntfy/cache.db
+      NTFY_CACHE_DURATION: 24h
+      NTFY_AUTH_FILE: /var/lib/ntfy/auth.db
+      NTFY_AUTH_DEFAULT_ACCESS: deny-all
+      NTFY_ENABLE_LOGIN: "true"
+      NTFY_BEHIND_PROXY: "false" # Only direct loopback access at this stage.
+      NTFY_LOG_LEVEL: info
+    ports:
+      - "127.0.0.1:8792:8080"
+    volumes:
+      - "./data:/var/lib/ntfy"
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/v1/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 30s
