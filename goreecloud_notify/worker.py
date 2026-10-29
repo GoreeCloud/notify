@@ -1,4 +1,4 @@
-"""Background ntfy subscriptions. GTK updates are marshalled to the main loop."""
+"""Background ntfy subscriptions with stale-worker cancellation fences."""
 from __future__ import annotations
 
 import threading
@@ -32,30 +32,41 @@ class SubscriptionManager:
         # Streams have a read timeout; don't block GTK main thread waiting for them.
         self._threads = []
 
+    def _is_current(self, stop: threading.Event) -> bool:
+        return not stop.is_set() and stop is self._stop
+
+    def _report(self, topic: str, state: str, stop: threading.Event, on_status) -> None:
+        if self._is_current(stop):
+            on_status(topic, state)
+
     def _listen(self, server: str, topic: str, token: str, stop: threading.Event):
+        # Freeze callbacks for this worker so a previous connection cannot use
+        # the next connection's newly installed GTK callback generation.
+        on_message, on_status = self.on_message, self.on_status
         client = NtfyClient(server, token)
         since = "10m"  # Bounded initial history, not full-cache replay.
         backoff = 1
         seen = self._seen.setdefault(topic, deque(maxlen=500))
-        while not stop.is_set():
-            self.on_status(topic, "Connecting")
+        while self._is_current(stop):
+            self._report(topic, "Connecting", stop, on_status)
             try:
-                for note in client.stream(topic, since, stop.is_set, on_open=lambda: self.on_status(topic, "Connected")):
-                    if stop.is_set():
+                for note in client.stream(
+                    topic, since, lambda: not self._is_current(stop),
+                    on_open=lambda: self._report(topic, "Connected", stop, on_status),
+                ):
+                    if not self._is_current(stop):
                         return
                     since = note.id
                     if note.id in seen:
                         continue
                     seen.append(note.id)
-                    self.on_message(note)
+                    on_message(note)
                 backoff = 1
             except NotifyError as exc:
-                if not stop.is_set():
-                    self.on_status(topic, str(exc))
+                self._report(topic, str(exc), stop, on_status)
             except Exception:
-                if not stop.is_set():
-                    self.on_status(topic, "Subscription failed; retrying")
-            if stop.wait(backoff):
+                self._report(topic, "Subscription failed; retrying", stop, on_status)
+            if not self._is_current(stop) or stop.wait(backoff):
                 break
             backoff = min(backoff * 2, 30)
-        self.on_status(topic, "Disconnected")
+        self._report(topic, "Disconnected", stop, on_status)

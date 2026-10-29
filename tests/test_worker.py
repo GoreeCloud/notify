@@ -27,3 +27,13 @@ def test_worker_deduplicates_stream_events(monkeypatch):
     manager = SubscriptionManager(got.append, lambda *args: None)
     manager._listen("https://ntfy.example.org", topic, "", manager._stop)
     assert [n.id for n in got] == ["same", "other"]
+
+
+def test_stale_worker_skips_dispatch():
+    got, statuses = [], []
+    manager = SubscriptionManager(got.append, lambda *a: statuses.append(a))
+    previous = manager._stop
+    manager._stop = threading.Event()
+    manager._listen("https://ntfy.example.org", "alerts", "", previous)
+    assert got == []
+    assert statuses == []

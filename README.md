@@ -10,8 +10,8 @@ GoreeCloud Notify is a privacy-first, self-hosting-friendly notification inbox. 
 
 - Native Linux GTK4/libadwaita navigation, message cards and contextual empty-state onboarding.
 - HTTPS ntfy server selection, including reverse-proxy base paths; loopback-only HTTP for development.
-- Multiple topic subscriptions with bounded local in-memory message history.
-- ndjson message streaming, ten-minute replay on first connect, resume from latest message ID, bounded reconnection delay, and duplicate suppression.
+- Multiple topic subscriptions, confirmation-based unsubscribe, and bounded local in-memory message history.
+- ndjson message streaming, ten-minute replay on first connect, resume from latest message ID, bounded reconnection delay, duplicate suppression, and stale-connection cancellation.
 - Publish text notifications with title, priority (1–5), and tags.
 - Optional Bearer token in the **OS keyring**, never in the local JSON settings file.
 - Failure states for authentication, rate limits, unexpected redirects, disconnection and oversized events.
