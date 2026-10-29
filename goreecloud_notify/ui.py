@@ -11,6 +11,7 @@ from gi.repository import Adw, Gio, GLib, Gtk
 
 from .core import NtfyClient, Notification, NotifyError, normalize_server, validate_topic
 from .filters import filter_notifications
+from .health import probe_health
 from .storage import load_settings, load_token, save_settings, save_token
 from .worker import SubscriptionManager
 
@@ -46,6 +47,7 @@ class NotifyWindow(Adw.ApplicationWindow):
         super().__init__(application=app, title="GoreeCloud Notify", default_width=1050, default_height=710)
         self.settings = {"server": "", "topics": []}
         self.connection_generation = 0
+        self.health_state = "Health not checked"
         self.messages: dict[str, list[Notification]] = {}
         self.statuses: dict[str, str] = {}
         self.rows: dict[Gtk.ListBoxRow, str] = {}
@@ -78,6 +80,9 @@ class NotifyWindow(Adw.ApplicationWindow):
         header.pack_end(compose)
         header.pack_end(add)
         header.pack_end(remove)
+        check = Gtk.Button(icon_name="network-transmit-receive-symbolic", tooltip_text="Test server health")
+        check.connect("clicked", self._check_health)
+        header.pack_end(check)
         header.pack_end(setup)
         toolbar.add_top_bar(header)
 
@@ -175,7 +180,7 @@ class NotifyWindow(Adw.ApplicationWindow):
         if self.settings["topics"] and self.selected_topic not in self.settings["topics"]:
             self.selected_topic = self.settings["topics"][0]
             self.topic_list.select_row(next(iter(self.rows)))
-        self.server_label.set_text(self.settings["server"] or "No server configured")
+        self.server_label.set_text((self.settings["server"] + "\n" + self.health_state) if self.settings["server"] else "No server configured")
         self._render_messages()
 
     def _select_row(self, _list, row):
@@ -265,6 +270,7 @@ class NotifyWindow(Adw.ApplicationWindow):
 
     def _restart(self):
         self.connection_generation += 1
+        self.health_state = "Health not checked"
         self.manager.stop()
         epoch = self.connection_generation
         self.manager.on_message = lambda n: GLib.idle_add(self._received, n, epoch)
@@ -312,6 +318,37 @@ class NotifyWindow(Adw.ApplicationWindow):
                 self._toast(str(exc))
         dialog.connect("response", changed)
         dialog.present()
+
+    def _check_health(self, *_):
+        server = self.settings["server"]
+        if not server:
+            self._configure()
+            return
+        epoch = self.connection_generation
+        try:
+            token = load_token(server)
+        except NotifyError as exc:
+            self._toast(str(exc))
+            return
+        self.health_state = "Checking server health…"
+        self._refresh()
+        def work():
+            try:
+                result = probe_health(NtfyClient(server, token))
+                status = ("Server healthy" if result.healthy else "Server reports unhealthy")
+                status += f" ({result.latency_ms} ms)"
+            except NotifyError as exc:
+                status = str(exc)
+            GLib.idle_add(self._health_completed, epoch, status)
+        threading.Thread(target=work, daemon=True, name="ntfy-health-probe").start()
+
+    def _health_completed(self, epoch: int, status: str):
+        if epoch != self.connection_generation:
+            return False
+        self.health_state = status
+        self._refresh()
+        self._toast(status)
+        return False
 
     def _add_topic(self, *_):
         if not self.settings["server"]:

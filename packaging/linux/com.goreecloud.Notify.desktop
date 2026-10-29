@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=GoreeCloud Notify
+GenericName=Native ntfy notification client
+Comment=Receive and publish ntfy notifications
+Exec=goreecloud-notify
+Icon=com.goreecloud.Notify
+Terminal=false
+Categories=Network;
+StartupNotify=true
+Keywords=notification;ntfy;self-hosted;

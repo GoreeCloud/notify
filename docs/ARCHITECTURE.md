@@ -10,6 +10,7 @@ GoreeCloud Notify is the original client. Upstream ntfy remains independently au
 | --- | --- |
 | `core.py` | ntfy validation, JSON event parsing, HTTP publish/stream, bearer auth headers, strict no-redirect behavior |
 | `filters.py` | Pure, case-insensitive in-memory search and minimum-priority filtering without API requests |
+| `health.py` | Bounded, read-only ntfy `/v1/health` probe with explicit unhealthy/error results |
 | `storage.py` | Atomic 0600 metadata config and operating-system keyring access |
 | `worker.py` | Per-topic background subscription, deduplication, cursor replay, bounded reconnect delay and generation fences |
 | `ui.py` | Native GTK4/libadwaita layout, setup flow, topic navigation, text compose and message cards |
@@ -23,6 +24,8 @@ GoreeCloud Notify is the original client. Upstream ntfy remains independently au
 4. Later reconnects use the most recent message ID in `since=` so the server can replay missed events.
 5. Received `event=message` objects update GTK on the main loop; only the last 200 per topic are kept in process memory.
 6. Publishing sends an HTTP POST to the selected topic with optional title, tags and priority.
+
+The application can check the documented `/v1/health` endpoint, but a healthy server does not prove that topic ACLs, subscriptions, or publishing work. The probe is opt-in, bounded to 4 KiB, and does not perform writes.
 
 The app does not implement server-side users, ACLs, attachments, arbitrary HTTP action execution, remote URL opening or automatic OS notification delivery. Each is a separately governed and testable follow-up.
 
