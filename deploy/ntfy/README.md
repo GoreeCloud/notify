@@ -132,6 +132,73 @@ and offline backup worker remained healthy. This is an on-host application
 startup check, not an off-host recovery, backup-encryption assessment, or
 authenticated client acceptance.
 
+## Encrypted off-host export: key custody gate
+
+The optional [sealed export utility](../../tools/ntfy_sealed_export.py)
+prepares a verified local SQLite snapshot for **encrypted** off-host
+delivery. It uses the installed GnuPG/OpenPGP implementation rather than
+inventing a new cipher or embedding a decryption key in the application.
+
+**Prerequisites, all required before using live data:**
+
+1. The recovery operator controls an encryption-capable OpenPGP private key
+   stored separately from the ntfy VPS; its custody, loss response, and
+   restoration process have been documented and verified.
+2. Independently verify the full **40-hex-character fingerprint** of that
+   key's public identity out of band. Import only its public key into a
+   private, owner-only GPG home on the source host. The export utility
+   refuses a nonexistent or mismatched fingerprint and never uses an
+   unpinned default recipient.
+3. Choose a private **0700** export directory independent from the snapshot
+   source. Do not commit, serve publicly, email, or log raw
+   `auth.db`/`cache.db` files or decrypted data.
+4. Run a synthetic round-trip and test decryption/manifest checking **on the
+   designated recovery host** before scheduling or moving real ciphertext.
+   Define an approved protected transport, recipient rotation policy,
+   retention schedule and off-host recovery test first.
+
+Only then, for an approved pre-existing owner-only SQLite snapshot:
+
+```sh
+python3 -B ntfy_sealed_export.py seal \
+  --snapshot /path/to/private/ntfy/backups/snapshot-directory \
+  --exports /path/to/private/encrypted-exports \
+  --recipient-fingerprint PINNED_40_HEX_RECIPIENT_FINGERPRINT \
+  --gpg-home /path/to/private/source-public-keyring
+```
+
+The tool independently integrity-checks the SQLite sources, computes
+SHA-256 digests, streams a fixed-name two-database archive **directly into
+GPG encryption** (without staging a plaintext tarball), and atomically
+publishes an owner-only encrypted file. Its manifest and hashes are
+**inside** the ciphertext. A digest/size mismatch or encryption failure
+removes any incomplete encrypted artifact. No key, token, auth record,
+message, or decrypted database content is printed.
+
+On an approved recovery machine where the **private decryption key is
+available**, verify a transferred ciphertext without extracting its
+contents to disk:
+
+```sh
+python3 -B ntfy_sealed_export.py verify \
+  --archive /path/to/private/sealed-snapshot.tar.gpg \
+  --gpg-home /path/to/private/recovery-keyring
+```
+
+The verification authenticates and streams the decrypted tar members to
+memory-bounded hashing only, rejecting unexpected members, corruption and
+manifest mismatches. It does **not** install a live database or automatically
+transfer ciphertext. A further isolated application-level restore drill is
+required before disaster recovery acceptance.
+
+**Evidence on October 29, 2026:** synthetic SQLite data was encrypted for
+a temporary test-only OpenPGP recipient, verified through decryption and
+digest checks, and tampering was rejected. **No real GoreeCloud auth or
+message data was encrypted, transferred or stored on the second VPS.
+No operational recipient/key custody, offsite delivery or off-host restore
+has been established.** GPG private keys, backup archives and plaintext
+content are never permitted in the public repository.
+
 ## Operations and rollback
 
 ```sh
