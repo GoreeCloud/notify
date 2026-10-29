@@ -11,3 +11,5 @@ build/
 .env.*
 !*.example
 /dist/
+# ntfy persisted authentication/message databases stay outside Git history.
+deploy/ntfy/data/
