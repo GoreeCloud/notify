@@ -20,6 +20,7 @@ classifiers = [
 
 [project.scripts]
 goreecloud-notify = "goreecloud_notify.ui:main"
+goreecloud-notify-cli = "goreecloud_notify.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["goreecloud_notify*"]

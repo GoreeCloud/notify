@@ -28,6 +28,9 @@ def test_native_debian_package_is_installable_structure(tmp_path):
     assert (package / "health.py").is_file()
     launcher = extracted / "usr/bin/goreecloud-notify"
     assert launcher.stat().st_mode & 0o111
+    assert (package / "cli.py").is_file()
+    cli_launcher = extracted / "usr/bin/goreecloud-notify-cli"
+    assert cli_launcher.stat().st_mode & 0o111
     assert (extracted / "usr/share/applications/com.goreecloud.Notify.desktop").is_file()
     assert (extracted / "usr/share/icons/hicolor/scalable/apps/com.goreecloud.Notify.svg").is_file()
     env = dict(os.environ, PYTHONPATH=str(extracted / "usr/lib/python3/dist-packages"))
@@ -37,6 +40,12 @@ def test_native_debian_package_is_installable_structure(tmp_path):
         cwd=tmp_path, env=env, check=True, capture_output=True, text=True,
     )
     assert "HealthResult" in check.stdout
+    cli_help = subprocess.run(
+        [sys.executable, str(cli_launcher), "--help"],
+        cwd=tmp_path, env=env, check=True, capture_output=True, text=True,
+    )
+    assert "goreecloud-notify-cli" in cli_help.stdout
+    assert "subscribe" in cli_help.stdout
 
 
 @pytest.mark.skipif(shutil.which("desktop-file-validate") is None, reason="desktop-file-utils unavailable")
