@@ -47,6 +47,13 @@ def build(output_dir: Path) -> Path:
             encoding="utf-8",
         )
         launcher.chmod(0o755)
+        cli_launcher = staging / "usr/bin/goreecloud-notify-cli"
+        cli_launcher.write_text(
+            "#!/usr/bin/python3\nfrom goreecloud_notify.cli import main\n"
+            "if __name__ == '__main__':\n    raise SystemExit(main())\n",
+            encoding="utf-8",
+        )
+        cli_launcher.chmod(0o755)
         control = staging / "DEBIAN/control"
         control.parent.mkdir(parents=True, exist_ok=True)
         control.write_text(
@@ -57,7 +64,7 @@ def build(output_dir: Path) -> Path:
             "Architecture: all\n"
             "Maintainer: GoreeCloud <295260680+GoreeCloud@users.noreply.github.com>\n"
             "Depends: python3 (>= 3.11), python3-gi, python3-keyring, gir1.2-gtk-4.0, gir1.2-adw-1\n"
-            "Description: Native GTK4 desktop client for an ntfy server\n"
+            "Description: Native GTK4 desktop and CLI clients for an ntfy server\n"
             " GoreeCloud Notify is a development-preview Linux application that\n"
             " subscribes and publishes notifications via an existing ntfy API.\n",
             encoding="utf-8",
