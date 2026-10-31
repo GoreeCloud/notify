@@ -104,8 +104,10 @@ def test_same_date_corrupt_snapshot_is_not_silently_skipped(tmp_path):
     folder = next(backups.iterdir())
     (folder / "auth.db").write_bytes(b"damaged")
     (folder / "auth.db").chmod(0o600)
+    # Snapshot filenames use the live UTC clock, not the test's fixed date.
+    captured = snapshot_times(backups)[-1]
     with pytest.raises(sqlite3.DatabaseError):
-        run_once(source, backups, now())
+        run_once(source, backups, captured)
     assert len(snapshot_times(backups)) == 1
 
 
