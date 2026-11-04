@@ -8,8 +8,8 @@
 
 - Original Go service using **only the Go standard library** (no external server dependencies).
 - Authenticated JSON publish API, default-deny bearer-token authentication, role- and topic-scoped token hashes via optional ACL configuration.
-- Durable, append-only local JSONL event storage; restart recovery; configurable retention and per-topic history limits; atomic periodic compaction.
-- Real-time Server-Sent Events (SSE) subscriptions with replay and bounded per-subscriber queues; JSON notification history and topic listing.
+- Durable, append-only local JSONL event storage; restart recovery; configurable retention and per-topic history limits; crash-conscious periodic compaction, fail-closed append errors, and offline log verification.
+- Real-time Server-Sent Events (SSE) subscriptions with replay, bounded per-subscriber queues, and connection budgets (4 per credential, 64 total); JSON notification history and topic listing.
 - Five notification priorities, titles, tagged alerts, validated click-through links, and strict request validation and a basic per-token publishing limit.
 - Idempotent publishing keys with persistent conflict detection; stable random event identifiers.
 - Go-embedded, responsive **GoreeCloud UI**-aligned web console: channel selection, live timeline, compose, priority filtering, and tab-only token handling.
@@ -49,6 +49,17 @@ docker compose up --build -d
 
 **Do not expose the HTTP port to the public internet.** The Compose port is bound to `127.0.0.1`. For remote access use an authenticated, configured HTTPS reverse proxy or a VPN, with appropriate network policies. A plain HTTP remote connection exposes bearer tokens.
 
+## Offline integrity verification (maintenance)
+
+Stop the service or use a **consistent filesystem snapshot** before checking its log:
+
+```bash
+go run ./cmd/notifylog -file ./data/messages.jsonl
+# Prints only counts of records/topics and log size, not notification content.
+```
+
+Malformed or truncated records and missing final newlines prevent startup. **Do not automatically truncate or repair** the original event log. Preserve the evidence and recover from a verified backup or an independently reviewed offline repair. See [operations](docs/OPERATIONS.md).
+
 ## Documentation
 
 - [API reference](docs/API.md)
@@ -63,7 +74,7 @@ docker compose up --build -d
 ```bash
 go test -race ./...
 go vet ./...
-go build ./cmd/notify
+go build ./...
 node --check cmd/notify/web/app.js
 ```
 

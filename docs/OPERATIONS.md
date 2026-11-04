@@ -19,10 +19,20 @@ Read README quickstart. Use a random admin secret; never commit `.env` or ACL fi
 
 1. Quiesce publishing and stop the process (or take an atomic filesystem snapshot).
 2. Copy the private `NOTIFY_DATA_DIR/messages.jsonl` file, secrets managed externally, configuration and ACL file into access-controlled encrypted backup storage.
-3. Verify backup integrity and test restoration in a disposable environment.
+3. Verify the backed-up log offline (`go run ./cmd/notifylog -file /path/to/snapshot/messages.jsonl`) and test restoration in a disposable environment. The verifier reports record count, topic count and bytes only; it does not validate backup encryption, permitted access, or application-level delivery.
 4. Restore into a **stopped** process, with correct private permissions. Restart and verify `/readyz`, authenticated history and replay.
 
-Do not copy active JSONL files blindly while writes are happening; such copies can end with a partially written record. A partial record causes startup to fail closed rather than silently drop data.
+Do not copy active JSONL files blindly while writes are happening; such copies can end with a partially written record. A partial record or missing final newline causes startup to fail closed rather than silently drop data. Do not delete, truncate, or repair damaged originals in place.
+
+## Persistence incident recovery
+
+1. Stop the Notify process and block new publishers at the trusted ingress. Do not attempt live repair.
+2. Capture a **read-only forensic copy** of the affected private data directory with original permissions and timestamps, in encrypted restricted storage.
+3. Verify the **stopped or snapshotted copy** using `go run ./cmd/notifylog -file /path/to/copy/messages.jsonl`. The checker detects malformed records, missing final newlines, and duplicate event IDs; the service does not silently remove corrupt tails.
+4. Restore a previously verified point-in-time backup **to a separate private directory**, verify it offline, then launch an isolated local test instance. Compare expected event IDs, timestamps, idempotent replays, and subscriber behavior.
+5. Record the expected data-loss window and root cause before any separately authorized production recovery. Do not share JSONL log files with parallel active writers.
+
+Failed compaction staging/rename preserves the old active writer. After an append/fsync or parent-directory fsync failure, the process rejects further publishing until controlled recovery. Atomic rename and directory sync are designed for supported local Linux filesystems; **network filesystem and power-loss guarantees have not been validated**. A successful offline checker is not a complete disaster-recovery drill.
 
 ## Upgrade / rollback
 

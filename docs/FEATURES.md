@@ -6,8 +6,8 @@ This is the implementation status of the requested native GoreeCloud Notify plat
 | --- | --- | --- |
 | Native GoreeCloud notification server | **Implemented (alpha)** | Original Go stdlib service |
 | Topic-based messaging | **Implemented (alpha)** | Publish and subscribe by topic |
-| Durable notifications and offline retrieval | **Implemented (alpha)** | Single-server JSONL, retention-limited |
-| Streaming delivery | **Implemented (alpha)** | Authenticated SSE |
+| Durable notifications and offline retrieval | **Implemented (alpha)** | Single-server JSONL; fail-closed storage errors, crash-conscious compaction, offline integrity checker |
+| Streaming delivery | **Implemented (alpha)** | Authenticated SSE; 4 simultaneous streams per token, 64 total; capacity reclaimed on disconnect |
 | Authenticated API and topic permissions | **Implemented (alpha)** | Admin + hashed subscriber/publisher tokens |
 | Title, body, priority, tags, clickable URL | **Implemented (alpha)** | Strict JSON validation |
 | Notification deduplication | **Implemented (alpha)** | Explicit persistent idempotency key |
@@ -32,7 +32,7 @@ This is the implementation status of the requested native GoreeCloud Notify plat
 ## Next priority order
 
 1. Security hardening: network rate limits, token lifecycle, audit and TLS reference deployment.
-2. Persistence reliability: storage fault-injection tests, backup/restore tooling, expiration tests and larger-volume benchmarks.
+2. Persistence reliability: expand injected disk-failure/power-loss tests, add controlled restore tooling, expiration tests and larger-volume benchmarks; offline verifier now available.
 3. Delivery lifecycle: scheduler, cancellation, update/clear/delete with controlled concurrency.
 4. OS notifications: Web Push/PWA, UnifiedPush and native mobile clients.
 5. Integrations: GoreeCloud Identity, service accounts, webhooks, email/SMS/voice adapters, routing and escalation.

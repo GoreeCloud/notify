@@ -5,7 +5,7 @@
 - `cmd/notify`: main HTTP server, embedded original web client, configuration and shutdown.
 - `internal/notify/model.go`: message schema and input validation.
 - `internal/notify/auth.go`: bootstrap administrator credential and hashed role/topic ACL entries.
-- `internal/notify/store.go`: append-only JSONL persistence, in-memory topic indexes, idempotency and bounded subscriber fan-out, compacting retention.
+- `internal/notify/store.go`: append-only JSONL persistence, in-memory topic indexes, idempotency and bounded subscriber fan-out, compacting retention, fail-closed storage writes, and read-only offline verification.
 - `internal/notify/http.go`: versioned HTTP API, SSE, admin metrics.
 
 The initial persistence architecture is a single-instance event log. It is intentionally **not a distributed message broker**. Public multi-node clustering, active-active operation, end-to-end encryption, transport gateway integrations, attachments, scheduling, push to mobile OS, and identity federation are not yet implemented.
@@ -19,7 +19,7 @@ The initial persistence architecture is a single-instance event log. It is inten
 5. Browser tokens are held in memory only, never saved in local storage or cookies. Restarting the tab requires reconnecting.
 6. Untrusted message content is rendered with `textContent`, not `innerHTML`; click-through URLs are HTTP(S)-only.
 7. HTTP security headers include CSP for web assets and `no-store` for the API. No permissive CORS policy is configured.
-8. Bound request body sizes, bounded message history, validated topic names and tags, and an hourly compaction limit resource use.
+8. Bound request body sizes, bounded message history, validated topic names and tags, and hourly compaction limit resource use. SSE streams have **per-token (4)** and **process-wide (64)** budgets, released on disconnect. These do not replace edge DoS limits.
 9. Container executes as unprivileged UID 65532 with dropped capabilities and a read-only root filesystem.
 
 ### Important risks / alpha restrictions
@@ -29,9 +29,9 @@ The initial persistence architecture is a single-instance event log. It is inten
 - SHA-256 hashes in the ACL file protect against direct plaintext exposure, but weak tokens are vulnerable to offline guessing. Always generate long random tokens.
 - ACL file is loaded at startup, not dynamically reloaded. Rotate and restart after editing it.
 - In-memory indexing currently requires memory proportional to retained messages, and the single JSONL log is not suitable for multi-instance concurrent writers.
-- The local log uses `fsync` per accepted message; performance at high volumes must be benchmarked.
+- The local log uses `fsync` per accepted message; performance at high volumes must be benchmarked. On append/fsync failure, further writes are refused pending recovery. Compaction syncs a temporary file, renames it atomically on a local Linux filesystem, and syncs the parent directory; the original writer remains usable after a staging/rename error. A directory sync failure stops writes because durability is uncertain. Power-loss fault injection remains a production gate.
 - Health/readiness endpoints report process health, not verified cloud push delivery or end-to-end storage health.
-- There is a basic in-memory limit of 120 publish attempts per token per minute, but no comprehensive network DoS control, distributed rate limiting, incident escalation, strong identity federation, or server-managed user registration in this alpha. Restrict network exposure accordingly.
+- There is a basic in-memory limit of 120 publishing requests per token per minute and bounded SSE streams, but no comprehensive network DoS control, distributed rate limiting, incident escalation, strong identity federation, or server-managed user registration in this alpha. Restrict network exposure accordingly.
 - Do not use this alpha as the sole channel for emergency or safety-critical alert delivery.
 
 ## Topic-scoped tokens
