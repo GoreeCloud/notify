@@ -21,6 +21,9 @@ type Handler struct {
 	ui        http.Handler
 	limiterMu sync.Mutex
 	limiter   map[string]publishWindow
+	streamsMu sync.Mutex
+	streams map[string]int
+	totalStreams int
 }
 type publishWindow struct {
 	start time.Time
@@ -28,7 +31,7 @@ type publishWindow struct {
 }
 
 func NewHandler(s *Store, a *Auth, ui http.Handler) http.Handler {
-	h := &Handler{store: s, auth: a, ui: ui, limiter: make(map[string]publishWindow)}
+	h := &Handler{store: s, auth: a, ui: ui, limiter: make(map[string]publishWindow), streams: make(map[string]int)}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"status": "ok"})
@@ -184,6 +187,15 @@ func (h *Handler) events(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// Bound long-lived streams by credential and process-wide budget.
+	key := sha256.Sum256([]byte(strings.TrimSpace(r.Header.Get("Authorization")[7:])))
+	release, allowed := h.acquireStream(hex.EncodeToString(key[:]))
+	if !allowed {
+		w.Header().Set("Retry-After", "5")
+		fail(w, http.StatusTooManyRequests, "too many active streams")
+		return
+	}
+	defer release()
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		fail(w, 500, "streaming unavailable")
@@ -273,4 +285,26 @@ func (h *Handler) allowPublish(tokenID string) bool {
 	w.count++
 	h.limiter[tokenID] = w
 	return true
+}
+
+// acquireStream bounds long-running SSE requests without trusting proxy headers.
+func (h *Handler) acquireStream(tokenHash string) (func(), bool) {
+	h.streamsMu.Lock()
+	defer h.streamsMu.Unlock()
+	const perToken = 4
+	const global = 64
+	if h.streams[tokenHash] >= perToken || h.totalStreams >= global {
+		return nil, false
+	}
+	h.streams[tokenHash]++
+	h.totalStreams++
+	return func() {
+		h.streamsMu.Lock()
+		defer h.streamsMu.Unlock()
+		h.streams[tokenHash]--
+		h.totalStreams--
+		if h.streams[tokenHash] == 0 {
+			delete(h.streams, tokenHash)
+		}
+	}, true
 }

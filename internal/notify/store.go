@@ -29,6 +29,7 @@ type Store struct {
 	retention   time.Duration
 	maxPerTopic int
 	published   uint64
+	writeError  error // Reject writes after a failed append or fsync.
 }
 
 func OpenStore(dir string, retention time.Duration, maxPerTopic int) (*Store, error) {
@@ -45,6 +46,10 @@ func OpenStore(dir string, retention time.Duration, maxPerTopic int) (*Store, er
 	}
 	s := &Store{file: f, path: path, subs: make(map[string]map[chan Message]struct{}), dedup: make(map[string]Message), retention: retention, maxPerTopic: maxPerTopic}
 	// Fail closed on corrupt data; never silently discard potentially durable events.
+	if err := requireTerminatedLog(f); err != nil {
+		_ = f.Close()
+		return nil, err
+	}
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 4096), 65536)
 	cutoff := time.Now().UTC().Add(-retention)
@@ -82,6 +87,9 @@ func dedupKey(publisher, topic, key string) string { return publisher + ":" + to
 func (s *Store) Publish(topic string, req PublishRequest, publisher, idemKey, digest string) (Message, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.writeError != nil {
+		return Message{}, false, s.writeError
+	}
 	if idemKey != "" {
 		if old, ok := s.dedup[dedupKey(publisher, topic, idemKey)]; ok {
 			if old.PayloadDigest != digest {
@@ -100,10 +108,12 @@ func (s *Store) Publish(topic string, req PublishRequest, publisher, idemKey, di
 		return Message{}, false, err
 	}
 	if _, err = s.file.Write(append(record, '\n')); err != nil {
-		return Message{}, false, err
+		s.writeError = fmt.Errorf("message log append failed; stop and restore before retrying: %w", err)
+		return Message{}, false, s.writeError
 	}
 	if err = s.file.Sync(); err != nil {
-		return Message{}, false, err
+		s.writeError = fmt.Errorf("message log fsync failed; stop and restore before retrying: %w", err)
+		return Message{}, false, s.writeError
 	}
 	s.messages = append(s.messages, m)
 	s.published++
@@ -206,7 +216,14 @@ func (s *Store) Stats() (messages int, active int, published uint64) {
 	return messages, active, s.published
 }
 
-func (s *Store) Prune() error { s.mu.Lock(); defer s.mu.Unlock(); return s.compactLocked() }
+func (s *Store) Prune() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.writeError != nil {
+		return s.writeError
+	}
+	return s.compactLocked()
+}
 func (s *Store) compactLocked() error {
 	cutoff := time.Now().UTC().Add(-s.retention)
 	counts := map[string]int{}
@@ -249,17 +266,24 @@ func (s *Store) compactLocked() error {
 	if err = tmp.Close(); err != nil {
 		return err
 	}
-	if err = s.file.Close(); err != nil {
-		return err
-	}
-	if err = os.Rename(tmp.Name(), s.path); err != nil {
-		return err
-	}
-	next, err := os.OpenFile(s.path, os.O_RDWR|os.O_APPEND, 0600)
+	// Open the replacement before publishing it. On a staging/rename error,
+	// the original descriptor remains active and writable.
+	next, err := os.OpenFile(tmp.Name(), os.O_RDWR|os.O_APPEND, 0600)
 	if err != nil {
 		return err
 	}
+	if err = os.Rename(tmp.Name(), s.path); err != nil {
+		_ = next.Close()
+		return err
+	}
+	// On a local Linux filesystem rename atomically installs the new log.
+	old := s.file
 	s.file = next
+	_ = old.Close()
+	if err = syncDir(filepath.Dir(s.path)); err != nil {
+		s.writeError = fmt.Errorf("message log directory fsync failed: %w", err)
+		return s.writeError
+	}
 	s.messages = kept
 	s.dedup = make(map[string]Message)
 	for _, m := range kept {
@@ -269,6 +293,16 @@ func (s *Store) compactLocked() error {
 	}
 	return nil
 }
+// syncDir persists the rename metadata on supported local Linux filesystems.
+func syncDir(path string) error {
+	d, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	return d.Sync()
+}
+
 func (s *Store) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -279,4 +313,79 @@ func (s *Store) Close() error {
 	}
 	s.subs = map[string]map[chan Message]struct{}{}
 	return s.file.Close()
+}
+
+// requireTerminatedLog detects a torn append even if the last JSON record
+// happens to be parseable. Every accepted record ends in a newline.
+func requireTerminatedLog(f *os.File) error {
+	info, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if info.Size() == 0 {
+		return nil
+	}
+	var end [1]byte
+	if _, err := f.ReadAt(end[:], info.Size()-1); err != nil {
+		return err
+	}
+	if end[0] != '\n' {
+		return errors.New("message log lacks final newline (possible interrupted append); restore from verified backup or repair offline")
+	}
+	return nil
+}
+
+// LogReport is a content-free summary of an offline log integrity check.
+type LogReport struct {
+	Records int   `json:"records"`
+	Topics  int   `json:"topics"`
+	Bytes   int64 `json:"bytes"`
+}
+
+// VerifyLog is read-only; callers must stop writers or use a consistent snapshot.
+func VerifyLog(path string) (LogReport, error) {
+	var report LogReport
+	f, err := os.Open(path)
+	if err != nil {
+		return report, err
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return report, err
+	}
+	if !info.Mode().IsRegular() {
+		return report, errors.New("message log is not a regular file")
+	}
+	report.Bytes = info.Size()
+	if err := requireTerminatedLog(f); err != nil {
+		return report, err
+	}
+	if _, err := f.Seek(0, 0); err != nil {
+		return report, err
+	}
+	scan := bufio.NewScanner(f)
+	scan.Buffer(make([]byte, 4096), 65536)
+	topics := make(map[string]struct{})
+	ids := make(map[string]struct{})
+	for scan.Scan() {
+		var entry storedMessage
+		if err := json.Unmarshal(scan.Bytes(), &entry); err != nil {
+			return report, fmt.Errorf("malformed record %d: %w", report.Records+1, err)
+		}
+		if entry.ID == "" || !ValidTopic(entry.Topic) || entry.CreatedAt.IsZero() || entry.Priority < 1 || entry.Priority > 5 {
+			return report, fmt.Errorf("invalid record %d", report.Records+1)
+		}
+		if _, ok := ids[entry.ID]; ok {
+			return report, fmt.Errorf("duplicate record ID at line %d", report.Records+1)
+		}
+		ids[entry.ID] = struct{}{}
+		topics[entry.Topic] = struct{}{}
+		report.Records++
+	}
+	if err := scan.Err(); err != nil {
+		return report, err
+	}
+	report.Topics = len(topics)
+	return report, nil
 }
