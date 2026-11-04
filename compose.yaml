@@ -1,0 +1,25 @@
+name: goreecloud-notify
+services:
+  notify:
+    build: .
+    image: goreecloud-notify:local
+    restart: unless-stopped
+    read_only: true
+    ports:
+      - "127.0.0.1:${NOTIFY_PORT:-8787}:8080"
+    environment:
+      NOTIFY_ADDR: "0.0.0.0:8080"
+      NOTIFY_DATA_DIR: /var/lib/goreecloud-notify
+      NOTIFY_ADMIN_TOKEN: ${NOTIFY_ADMIN_TOKEN:?Generate and configure a long random secret in .env}
+      NOTIFY_RETENTION_HOURS: ${NOTIFY_RETENTION_HOURS:-168}
+      NOTIFY_MAX_MESSAGES_PER_TOPIC: ${NOTIFY_MAX_MESSAGES_PER_TOPIC:-5000}
+    volumes:
+      - notify_data:/var/lib/goreecloud-notify
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+volumes:
+  notify_data: {}

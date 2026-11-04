@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101522"><meta name="description" content="GoreeCloud Notify — private, native event messaging and real-time alerts.">
+<title>GoreeCloud Notify · Signal Center</title><link rel="stylesheet" href="/styles.css"><script src="/app.js" type="module"></script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" aria-label="Workspace channels">
+    <div class="brand"><span class="symbol" aria-hidden="true">✦</span><div><strong>GoreeCloud</strong><span>NOTIFY</span></div></div>
+    <div class="workspace"><span class="workspace-dot" aria-hidden="true"></span><span>Personal workspace</span><span aria-hidden="true">⌄</span></div>
+    <div class="sidebar-heading"><span>CHANNELS</span><span id="sidebarCount" class="small-count">0</span></div>
+    <form id="addTopicForm" class="topic-form"><label class="sr-only" for="addTopic">Add channel</label><input id="addTopic" autocomplete="off" maxlength="64" placeholder="New channel name" pattern="[A-Za-z0-9_-]{1,64}" required><button type="submit" aria-label="Add channel">+</button></form>
+    <nav id="channelList" class="channel-list" aria-label="Channels"></nav>
+    <p class="tip">New channels are created on the server when their first notification is published.</p>
+    <div class="sidebar-bottom"><div class="privacy"><span class="privacy-icon">◇</span><div><strong>Private by design</strong><small>Secure, self-hosted infrastructure</small></div></div><div class="side-note">GoreeCloud Notify <span>alpha 0.1.0</span></div></div>
+  </aside>
+  <main class="main">
+    <header class="top"><div class="breadcrumb"><span>Workspace</span><span>/</span><strong>Signal center</strong></div><div class="top-status"><span id="stateDot" class="state-dot"></span><span id="stateLabel">Disconnected</span><span class="avatar">G</span></div></header>
+    <div class="content">
+      <section class="hero"><div class="hero-copy"><p class="overline"><span class="star">✳</span> BUILT FOR YOUR DIGITAL WORLD</p><h1>Every signal.<br><em>One beautiful place.</em></h1><p class="hero-desc">Stay close to what matters. Notifications from your apps, systems, and infrastructure, organized with intention.</p></div><div class="halo" aria-hidden="true"><div class="outer-ring"></div><div class="inner-ring"></div><span class="halo-core">✦</span><span class="particle p1"></span><span class="particle p2"></span><span class="particle p3"></span></div></section>
+      <div class="stats"><div class="stat"><div class="stat-icon purple">◈</div><div><small>Channels</small><strong id="statTopics">0</strong></div><span class="stat-arrow">↗</span></div><div class="stat"><div class="stat-icon aqua">▣</div><div><small>Loaded events</small><strong id="statEvents">0</strong></div><span class="stat-arrow">↗</span></div><div class="stat"><div class="stat-icon coral">◉</div><div><small>Connection</small><strong id="statHealth">Offline</strong></div><span class="stat-arrow">↗</span></div></div>
+      <div class="grid"><section class="timeline" aria-labelledby="timelineTitle"><div class="section-title"><div><p class="overline secondary">EVENT STREAM</p><h2 id="timelineTitle">Activity <span id="topicPill" class="pill">Select a channel</span></h2></div><button id="clearFeed" class="quiet" type="button">Clear view</button></div><div class="toolbar"><label for="priorityFilter">Show</label><select id="priorityFilter"><option value="1">All priorities</option><option value="3">Normal and above</option><option value="4">High and critical</option><option value="5">Critical only</option></select><span id="shownCount">0 events</span></div><div id="feed" class="feed" aria-live="polite"><div class="empty"><span class="empty-art">✧</span><h3>Quiet looks good on you.</h3><p>Connect and select a channel to receive live events.</p></div></div></section>
+      <div class="right-rail"><section class="panel composer" aria-labelledby="composeTitle"><div class="panel-title"><span class="panel-icon">↗</span><div><p class="overline secondary">QUICK ACTION</p><h2 id="composeTitle">Send a notification</h2></div></div><form id="sendForm"><label for="topicField">Channel</label><input id="topicField" required maxlength="64" pattern="[A-Za-z0-9_-]{1,64}" placeholder="e.g. server-alerts" autocomplete="off"><label for="titleField">Title <span class="optional">Optional</span></label><input id="titleField" maxlength="120" placeholder="What's happening?"><label for="bodyField">Message</label><textarea id="bodyField" required maxlength="4096" rows="4" placeholder="Write a clear, useful update…"></textarea><div class="two-fields"><div><label for="priorityField">Priority</label><select id="priorityField"><option value="3">Normal</option><option value="1">Minimum</option><option value="2">Low</option><option value="4">High</option><option value="5">Critical</option></select></div><div><label for="tagsField">Tags <span class="optional">Optional</span></label><input id="tagsField" placeholder="backup,info"></div></div><details><summary>More options <span aria-hidden="true">⌄</span></summary><label for="clickField">Click-through URL</label><input id="clickField" type="url" placeholder="https://example.org"></details><button id="sendButton" class="primary" type="submit">Publish event <span aria-hidden="true">↗</span></button><p class="form-note">Your message is delivered to authorized subscribers of this channel.</p></form></section>
+      <section class="panel access" aria-labelledby="accessTitle"><div class="access-title"><span class="access-icon">♧</span><div><h2 id="accessTitle">Secure connection</h2><p id="identity">Not authenticated</p></div></div><label for="tokenField">Access token</label><div class="token-line"><input id="tokenField" type="password" autocomplete="off" spellcheck="false" placeholder="Paste a bearer token"><button type="button" id="connectButton">Connect</button></div><button id="disconnectButton" class="signout" type="button" hidden>Disconnect this session</button><p class="form-note">Credentials stay in memory only. Use HTTPS outside localhost.</p></section></div></div>
+      <footer><span>GoreeCloud Notify · Native services foundation</span><span>Privacy is a feature. Ownership is the standard.</span></footer>
+    </div>
+  </main>
+</div>
+<div id="statusToast" role="status" class="toast" hidden></div>
+</body></html>
