@@ -5,7 +5,7 @@ COPY go.mod ./
 COPY internal/ ./internal/
 COPY cmd/ ./cmd/
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /notify ./cmd/notify
-RUN mkdir -p /var/lib/goreecloud-notify && chown 65532:65532 /var/lib/goreecloud-notify
+RUN mkdir -p /var/lib/goreecloud-notify && chown 65532:65532 /var/lib/goreecloud-notify && chmod 0700 /var/lib/goreecloud-notify
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /notify /notify

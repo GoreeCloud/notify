@@ -16,14 +16,15 @@ import (
 )
 
 type Handler struct {
-	store     *Store
-	auth      *Auth
-	ui        http.Handler
-	limiterMu sync.Mutex
-	limiter   map[string]publishWindow
-	streamsMu sync.Mutex
-	streams map[string]int
+	store        *Store
+	auth         *Auth
+	ui           http.Handler
+	limiterMu    sync.Mutex
+	limiter      map[string]publishWindow
+	streamsMu    sync.Mutex
+	streams      map[string]int
 	totalStreams int
+	peers        *peerLimiter
 }
 type publishWindow struct {
 	start time.Time
@@ -31,7 +32,7 @@ type publishWindow struct {
 }
 
 func NewHandler(s *Store, a *Auth, ui http.Handler) http.Handler {
-	h := &Handler{store: s, auth: a, ui: ui, limiter: make(map[string]publishWindow), streams: make(map[string]int)}
+	h := &Handler{store: s, auth: a, ui: ui, limiter: make(map[string]publishWindow), streams: make(map[string]int), peers: newPeerLimiter()}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"status": "ok"})
@@ -61,6 +62,14 @@ func NewHandler(s *Store, a *Auth, ui http.Handler) http.Handler {
 			w.Header().Set("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
 			w.Header().Set("Cache-Control", "no-store")
 		}
+		// Liveness/readiness must remain available to local orchestration.
+		// All other routes are limited by the real socket peer. Never use
+		// user-controlled X-Forwarded-For or Forwarded headers here.
+		if r.URL.Path != "/healthz" && r.URL.Path != "/readyz" && !h.peers.allow(r.RemoteAddr, time.Now()) {
+			w.Header().Set("Retry-After", "60")
+			fail(w, http.StatusTooManyRequests, "request rate limit exceeded")
+			return
+		}
 		mux.ServeHTTP(w, r)
 	})
 }
@@ -73,19 +82,27 @@ func fail(w http.ResponseWriter, code int, message string) {
 	writeJSON(w, code, map[string]string{"error": message})
 }
 func (h *Handler) principal(w http.ResponseWriter, r *http.Request, topic, action string) (Principal, bool) {
-	authHeader := r.Header.Get("Authorization")
-	if len(authHeader) < 8 || !strings.EqualFold(authHeader[:7], "Bearer ") {
+	// Reject duplicated/ambiguous headers and bearer credentials with
+	// whitespace or control characters rather than normalizing them.
+	values := r.Header.Values("Authorization")
+	if len(values) != 1 || len(values[0]) < 8 || len(values[0]) > 2048 ||
+		!strings.EqualFold(values[0][:7], "Bearer ") ||
+		strings.TrimSpace(values[0][7:]) != values[0][7:] ||
+		strings.ContainsAny(values[0][7:], " \t\r\n,") {
+		h.peers.failedAuth(r.RemoteAddr, time.Now())
 		w.Header().Set("WWW-Authenticate", `Bearer realm="GoreeCloud Notify"`)
-		fail(w, 401, "bearer token required")
+		fail(w, http.StatusUnauthorized, "bearer token required")
 		return Principal{}, false
 	}
-	p, ok := h.auth.Identify(strings.TrimSpace(authHeader[7:]))
+	p, ok := h.auth.Identify(values[0][7:])
 	if !ok {
-		fail(w, 401, "invalid token")
+		h.peers.failedAuth(r.RemoteAddr, time.Now())
+		w.Header().Set("WWW-Authenticate", `Bearer realm="GoreeCloud Notify"`)
+		fail(w, http.StatusUnauthorized, "invalid token")
 		return Principal{}, false
 	}
 	if topic != "" && !p.Allowed(topic, action) {
-		fail(w, 403, "topic access denied")
+		fail(w, http.StatusForbidden, "topic access denied")
 		return Principal{}, false
 	}
 	return p, true
@@ -191,7 +208,8 @@ func (h *Handler) events(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	// Bound long-lived streams by credential and process-wide budget.
+	// Long-lived streams consume a socket, goroutine, and queue. Limit them
+	// per credential and globally, without relying on spoofable proxy headers.
 	key := sha256.Sum256([]byte(strings.TrimSpace(r.Header.Get("Authorization")[7:])))
 	release, allowed := h.acquireStream(hex.EncodeToString(key[:]))
 	if !allowed {
@@ -291,7 +309,8 @@ func (h *Handler) allowPublish(tokenID string) bool {
 	return true
 }
 
-// acquireStream bounds long-running SSE requests without trusting proxy headers.
+// acquireStream bounds per-token and process-wide long-running SSE requests.
+// It never trusts user-supplied IP/forwarded headers for authorization.
 func (h *Handler) acquireStream(tokenHash string) (func(), bool) {
 	h.streamsMu.Lock()
 	defer h.streamsMu.Unlock()
