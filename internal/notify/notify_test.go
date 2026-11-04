@@ -203,3 +203,140 @@ func TestPublisherRateLimit(t *testing.T) {
 		t.Fatalf("expected 429, got %d", w.Code)
 	}
 }
+
+
+// The service does not silently rewrite a truncated tail during startup.
+func TestTruncatedRecordFailsClosedWithoutMutation(t *testing.T) {
+	dir := t.TempDir()
+	s, err := OpenStore(dir, 24*time.Hour, 100)
+	if err != nil { t.Fatal(err) }
+	if _, _, err := s.Publish("alerts", PublishRequest{Body: "sent", Priority: 3}, "publisher", "", ""); err != nil { t.Fatal(err) }
+	if err := s.Close(); err != nil { t.Fatal(err) }
+	path := filepath.Join(dir, "messages.jsonl")
+	fd, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil { t.Fatal(err) }
+	if _, err := fd.WriteString("{\"id\":\"incomplete"); err != nil { t.Fatal(err) }
+	_ = fd.Close()
+	before, err := os.ReadFile(path)
+	if err != nil { t.Fatal(err) }
+	reopened, err := OpenStore(dir, 24*time.Hour, 100)
+	if err == nil { _ = reopened.Close(); t.Fatal("corrupted log was accepted") }
+	after, err := os.ReadFile(path)
+	if err != nil { t.Fatal(err) }
+	if !bytes.Equal(before, after) { t.Fatal("failed startup modified damaged log") }
+}
+
+func TestCompactionErrorKeepsOldLogWriter(t *testing.T) {
+	s, err := OpenStore(t.TempDir(), 24*time.Hour, 100)
+	if err != nil { t.Fatal(err) }
+	defer s.Close()
+	original := s.path
+	s.path = filepath.Join(t.TempDir(), "missing", "messages.jsonl")
+	if err := s.Prune(); err == nil { t.Fatal("expected staging error") }
+	s.path = original
+	if _, _, err := s.Publish("alerts", PublishRequest{Body: "still writable", Priority: 3}, "producer", "", ""); err != nil {
+		t.Fatal("old log writer lost after failed compaction:", err)
+	}
+}
+
+func TestAppendFailureFailsClosed(t *testing.T) {
+	s, err := OpenStore(t.TempDir(), 24*time.Hour, 100)
+	if err != nil { t.Fatal(err) }
+	if err := s.file.Close(); err != nil { t.Fatal(err) }
+	for i := 0; i < 2; i++ {
+		if _, _, err := s.Publish("alerts", PublishRequest{Body: "fail", Priority: 3}, "producer", "", ""); err == nil {
+			t.Fatal("append failure must reject later writes")
+		}
+	}
+}
+
+func TestDurableIdempotencyAfterCompactionAndRestart(t *testing.T) {
+	dir := t.TempDir()
+	s, err := OpenStore(dir, 24*time.Hour, 3)
+	if err != nil { t.Fatal(err) }
+	req := PublishRequest{Body: "run-once", Priority: 3}
+	first, dup, err := s.Publish("backup", req, "producer", "event-1", "digest-1")
+	if err != nil || dup { t.Fatalf("initial publish failed: %v duplicate=%v", err, dup) }
+	if err := s.Prune(); err != nil { t.Fatal(err) }
+	if err := s.Close(); err != nil { t.Fatal(err) }
+	s, err = OpenStore(dir, 24*time.Hour, 3)
+	if err != nil { t.Fatal(err) }
+	defer s.Close()
+	second, dup, err := s.Publish("backup", req, "producer", "event-1", "digest-1")
+	if err != nil || !dup || second.ID != first.ID {
+		t.Fatalf("deduplication not preserved after restart: %v dup=%v", err, dup)
+	}
+}
+
+func TestMissingFinalNewlineFailsClosed(t *testing.T) {
+	dir := t.TempDir()
+	s, err := OpenStore(dir, 24*time.Hour, 100)
+	if err != nil { t.Fatal(err) }
+	_, _, err = s.Publish("alerts", PublishRequest{Body: "complete", Priority: 3}, "publisher", "", "")
+	if err != nil { t.Fatal(err) }
+	_ = s.Close()
+	path := filepath.Join(dir, "messages.jsonl")
+	b, err := os.ReadFile(path)
+	if err != nil { t.Fatal(err) }
+	if len(b) < 2 || b[len(b)-1] != '\n' { t.Fatal("unexpected log") }
+	if err := os.WriteFile(path, b[:len(b)-1], 0600); err != nil { t.Fatal(err) }
+	if reopened, err := OpenStore(dir, 24*time.Hour, 100); err == nil {
+		_ = reopened.Close()
+		t.Fatal("missing newline should fail startup")
+	}
+	if _, err := VerifyLog(path); err == nil { t.Fatal("verifier missed missing delimiter") }
+}
+
+func TestOfflineLogVerifierDoesNotRevealPayloads(t *testing.T) {
+	dir := t.TempDir()
+	s, err := OpenStore(dir, 24*time.Hour, 100)
+	if err != nil { t.Fatal(err) }
+	for _, topic := range []string{"private", "alerts"} {
+		if _, _, err := s.Publish(topic, PublishRequest{Body: "confidential contents", Priority: 3}, "publisher", "", ""); err != nil { t.Fatal(err) }
+	}
+	_ = s.Close()
+	report, err := VerifyLog(filepath.Join(dir, "messages.jsonl"))
+	if err != nil { t.Fatal(err) }
+	if report.Records != 2 || report.Topics != 2 || report.Bytes < 10 { t.Fatal(report) }
+	b, err := json.Marshal(report)
+	if err != nil { t.Fatal(err) }
+	if bytes.Contains(b, []byte("confidential")) { t.Fatal("verifier leaked payload") }
+}
+
+func TestConcurrentStreamBudgetAndRecovery(t *testing.T) {
+	_, h := setup(t)
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+	client := &http.Client{Timeout: 3 * time.Second}
+	var open []*http.Response
+	defer func() { for _, resp := range open { _ = resp.Body.Close() } }()
+	connect := func() *http.Response {
+		t.Helper()
+		r, err := http.NewRequest(http.MethodGet, srv.URL+"/api/v1/topics/alerts/events", nil)
+		if err != nil { t.Fatal(err) }
+		r.Header.Set("Authorization", "Bearer "+adminToken)
+		resp, err := client.Do(r)
+		if err != nil { t.Fatal(err) }
+		return resp
+	}
+	for i := 0; i < 4; i++ {
+		resp := connect()
+		if resp.StatusCode != http.StatusOK { t.Fatal(resp.Status) }
+		open = append(open, resp)
+	}
+	rejected := connect()
+	if rejected.StatusCode != http.StatusTooManyRequests || rejected.Header.Get("Retry-After") == "" {
+		t.Fatal("expected 429 with retry guidance", rejected.Status)
+	}
+	_ = rejected.Body.Close()
+	for _, resp := range open { _ = resp.Body.Close() }
+	open = nil
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		resp := connect()
+		if resp.StatusCode == http.StatusOK { _ = resp.Body.Close(); return }
+		_ = resp.Body.Close()
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatal("streams did not release capacity")
+}
