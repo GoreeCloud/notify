@@ -54,6 +54,7 @@ docker compose up --build -d
 - [API reference](docs/API.md)
 - [Architecture and security](docs/ARCHITECTURE.md)
 - [Capabilities and phased roadmap](docs/FEATURES.md)
+- [Complete 40-section product specification](docs/PRODUCT_SPEC.md)
 - [Operations and rollback](docs/OPERATIONS.md)
 - [GoreeCloud UI design conformance](docs/UI.md)
 
