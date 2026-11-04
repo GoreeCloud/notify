@@ -1,6 +1,6 @@
 # GoreeCloud Notify API v1 (alpha)
 
-Base URL: `http://127.0.0.1:8080` by default. All `/api/v1/*` requests require `Authorization: Bearer TOKEN`. There are no anonymous publish or subscription permissions. No credentials are accepted in query strings.
+Base URL: `http://127.0.0.1:8080` by default. All `/api/v1/*` requests require `Authorization: Bearer TOKEN`. There are no anonymous publish or subscription permissions. No credentials are accepted in query strings. Exactly one `Authorization` header is required; duplicated or malformed bearer headers receive `401`.
 
 | Method | Endpoint | Role | Description |
 | --- | --- | --- | --- |
@@ -49,8 +49,8 @@ data: {"id":"...","topic":"backup","body":"Verification passed.","priority":4,"c
 
 ```
 
-On connect, replay at most 100 retained events from the topic (oldest to newest). When `Last-Event-ID` or `after` identifies an event in this window, only subsequent retained events are replayed. Unknown/expired cursors replay the available window. A slow subscriber with a full 128-event queue is disconnected and should reconnect. There is no exactly-once delivery guarantee, no cross-topic atomic transaction, and no mobile OS push gateway in this alpha.
+On connect, replay at most 100 retained events from the topic (oldest to newest). When `Last-Event-ID` or `after` identifies an event in this window, only subsequent retained events are replayed. Unknown/expired cursors replay the available window. A slow subscriber with a full 128-event queue is disconnected and should reconnect. At most **4 simultaneous SSE connections per bearer credential** and **64 total active SSE connections per server process** are accepted; additional connections receive `429` with `Retry-After: 5`. The limits are in-memory, per instance; a fronting proxy must also enforce network-level protections. There is no exactly-once delivery guarantee, no cross-topic atomic transaction, and no mobile OS push gateway in this alpha.
 
 ## Errors
 
-Errors are JSON `{"error":"..."}` with relevant HTTP status codes: `400` malformed request, `401` missing or invalid bearer, `403` insufficient topic privileges, `409` idempotency conflict, `415` unsupported content type, `429` publish quota exceeded, `500` storage failure. The alpha applies a 120-attempts/minute per-token publishing limit and returns `Retry-After: 60` on limit violations. Clients should not assume a `201` response guarantees delivery to an offline mobile device.
+Errors are JSON `{"error":"..."}` with relevant HTTP status codes: `400` malformed request, `401` missing or invalid bearer, `403` insufficient topic privileges, `409` idempotency conflict, `415` unsupported content type, `429` publish quota or SSE stream budget exceeded, `500` storage failure. The alpha applies a 120-attempts/minute per-token publishing limit, plus **240 requests/minute per direct socket peer** and **30 failed authentication attempts/minute per direct peer**; additional requests get `429` and `Retry-After: 60`. The peer limiter tracks socket addresses, groups IPv6 addresses by `/64`, ignores forwarded headers, and has a 10,000-peer memory cap; reverse-proxy clients share a budget and require independent ingress controls. Liveness/readiness checks are exempt. Clients should not assume a `201` response guarantees delivery to an offline mobile device.

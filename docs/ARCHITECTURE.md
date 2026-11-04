@@ -5,10 +5,12 @@
 - `cmd/notify`: main HTTP server, embedded original web client, configuration and shutdown.
 - `internal/notify/model.go`: message schema and input validation.
 - `internal/notify/auth.go`: bootstrap administrator credential and hashed role/topic ACL entries.
-- `internal/notify/store.go`: append-only JSONL persistence, in-memory topic indexes, idempotency and bounded subscriber fan-out, compacting retention.
-- `internal/notify/http.go`: versioned HTTP API, SSE, admin metrics.
+- `internal/notify/store.go`: append-only JSONL persistence, in-memory topic indexes, idempotency and bounded subscriber fan-out, compacting retention, fail-closed storage writes, and read-only offline verification.
+- `internal/notify/http.go`: versioned HTTP API, SSE, admin metrics, strict bearer parsing.
+- `internal/notify/ratelimit.go`: fixed-window direct-peer request and invalid-auth throttling with bounded memory.
+- `internal/notify/backup.go`, `cmd/notifybackup`: offline, lock-checked, non-overwriting journal copy with integrity verification and destination fsync; encrypted backup storage remains the operator's responsibility.
 
-The initial persistence architecture is a single-instance event log. It is intentionally **not a distributed message broker**. Public multi-node clustering, active-active operation, end-to-end encryption, transport gateway integrations, attachments, scheduling, push to mobile OS, and identity federation are not yet implemented.
+The initial persistence architecture is a single-instance event log protected by an OS advisory lock (`flock`) on the private `.notify.lock` file; a concurrent second writer fails startup. It is intentionally **not a distributed message broker**. Public multi-node clustering, active-active operation, end-to-end encryption, transport gateway integrations, attachments, scheduling, push to mobile OS, and identity federation are not yet implemented.
 
 ## Security defaults
 
@@ -19,19 +21,19 @@ The initial persistence architecture is a single-instance event log. It is inten
 5. Browser tokens are held in memory only, never saved in local storage or cookies. Restarting the tab requires reconnecting.
 6. Untrusted message content is rendered with `textContent`, not `innerHTML`; click-through URLs are HTTP(S)-only.
 7. HTTP security headers include CSP for web assets and `no-store` for the API. No permissive CORS policy is configured.
-8. Bound request body sizes, bounded message history, validated topic names and tags, and an hourly compaction limit resource use.
-9. Container executes as unprivileged UID 65532 with dropped capabilities and a read-only root filesystem.
+8. Bound request body sizes, bounded message history, validated topic names and tags, and hourly compaction limit resource use. Direct-socket-peer rate limits apply at 240 requests/minute and 30 failed authentications/minute (bounded to 10,000 current peer windows); liveness/readiness endpoints are exempt. The service ignores client-controlled `Forwarded` and `X-Forwarded-For` fields for its limiter. SSE streams have **per-token (4)** and **process-wide (64)** budgets with capacity released on disconnect. These are not substitutes for edge DoS limits.
+9. Container executes as unprivileged UID 65532 with dropped capabilities and a read-only root filesystem. Data directory must be private (`0700`), and lock and journal files must be private regular files (`0600`); symlinks are rejected for the journal paths.
 
 ### Important risks / alpha restrictions
 
 - TLS is **not** terminated by this service; remote deployment **requires** a trusted HTTPS reverse proxy or an appropriately restricted VPN.
-- Local JSONL messages are not encrypted at rest; full-disk encryption/secure host permissions are needed for sensitive workloads.
+- Local JSONL messages and CLI-generated backups are **not encrypted at rest**; full-disk encryption, access-controlled encrypted backup storage, and secure host permissions are needed for sensitive workloads. The backup tool cannot prove a claimed external snapshot was atomic.
 - SHA-256 hashes in the ACL file protect against direct plaintext exposure, but weak tokens are vulnerable to offline guessing. Always generate long random tokens.
 - ACL file is loaded at startup, not dynamically reloaded. Rotate and restart after editing it.
-- In-memory indexing currently requires memory proportional to retained messages, and the single JSONL log is not suitable for multi-instance concurrent writers.
-- The local log uses `fsync` per accepted message; performance at high volumes must be benchmarked.
+- In-memory indexing currently requires memory proportional to retained messages. Only **one local writer** is supported, enforced by OS `flock`; this is not a distributed consensus lock and does not make shared/network filesystems safe. The locker is released on close or process exit.
+- The local log uses `fsync` per accepted message; performance at high volumes must be benchmarked. On append or fsync error, further writes are refused until restart/recovery. Compaction writes a temporary file, syncs it, renames it atomically on a local Linux filesystem, and syncs the parent directory; the original writer remains usable if staging/rename fails. A directory sync failure stops writes, since durability may be uncertain. Filesystem snapshots and crash tests are still required before production use.
 - Health/readiness endpoints report process health, not verified cloud push delivery or end-to-end storage health.
-- There is a basic in-memory limit of 120 publish attempts per token per minute, but no comprehensive network DoS control, distributed rate limiting, incident escalation, strong identity federation, or server-managed user registration in this alpha. Restrict network exposure accordingly.
+- A basic in-memory limit of 120 publishing attempts per token/minute, 240 requests per socket peer/minute, 30 invalid auth attempts per peer/minute and bounded SSE streams reduces accidental abuse. All clients behind a single ingress share a peer budget; independently configured per-origin ingress rate limits remain mandatory. These rules are per-process, reset on restart, and are not comprehensive DDoS or distributed protection.
 - Do not use this alpha as the sole channel for emergency or safety-critical alert delivery.
 
 ## Topic-scoped tokens
