@@ -37,6 +37,10 @@ func NewHandler(s *Store, a *Auth, ui http.Handler) http.Handler {
 		writeJSON(w, http.StatusOK, map[string]any{"status": "ok"})
 	})
 	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) {
+		if !h.store.Healthy() {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]any{"status": "unready"})
+			return
+		}
 		writeJSON(w, http.StatusOK, map[string]any{"status": "ready"})
 	})
 	mux.HandleFunc("GET /api/v1/me", h.me)

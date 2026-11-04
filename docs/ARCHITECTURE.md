@@ -30,7 +30,7 @@ The initial persistence architecture is a single-instance event log. It is inten
 - ACL file is loaded at startup, not dynamically reloaded. Rotate and restart after editing it.
 - In-memory indexing currently requires memory proportional to retained messages, and the single JSONL log is not suitable for multi-instance concurrent writers.
 - The local log uses `fsync` per accepted message; performance at high volumes must be benchmarked. On append/fsync failure, further writes are refused pending recovery. Compaction syncs a temporary file, renames it atomically on a local Linux filesystem, and syncs the parent directory; the original writer remains usable after a staging/rename error. A directory sync failure stops writes because durability is uncertain. Power-loss fault injection remains a production gate.
-- Health/readiness endpoints report process health, not verified cloud push delivery or end-to-end storage health.
+- `/healthz` reports process liveness. `/readyz` reports whether this process has observed a persistent storage write error; it switches to `503` after such a fault. Neither endpoint verifies external push delivery or detects every latent filesystem failure.
 - There is a basic in-memory limit of 120 publishing requests per token per minute and bounded SSE streams, but no comprehensive network DoS control, distributed rate limiting, incident escalation, strong identity federation, or server-managed user registration in this alpha. Restrict network exposure accordingly.
 - Do not use this alpha as the sole channel for emergency or safety-critical alert delivery.
 

@@ -340,3 +340,20 @@ func TestConcurrentStreamBudgetAndRecovery(t *testing.T) {
 	}
 	t.Fatal("streams did not release capacity")
 }
+
+func TestReadinessDetectsFailedPersistentWriter(t *testing.T) {
+	s, h := setup(t)
+	if got := req(t, h, "GET", "/readyz", "", "").Code; got != http.StatusOK {
+		t.Fatalf("expected ready, got %d", got)
+	}
+	if err := s.file.Close(); err != nil { t.Fatal(err) }
+	_, _, err := s.Publish("alerts", PublishRequest{Body: "fail", Priority: 3}, "publisher", "", "")
+	if err == nil { t.Fatal("expected storage write to fail") }
+	w := req(t, h, "GET", "/readyz", "", "")
+	if w.Code != http.StatusServiceUnavailable || !strings.Contains(w.Body.String(), "unready") {
+		t.Fatalf("storage failure should revoke readiness, got %d %s", w.Code, w.Body.String())
+	}
+	if got := req(t, h, "GET", "/healthz", "", "").Code; got != http.StatusOK {
+		t.Fatalf("process health should remain available, got %d", got)
+	}
+}

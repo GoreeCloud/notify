@@ -5,7 +5,7 @@ Base URL: `http://127.0.0.1:8080` by default. All `/api/v1/*` requests require `
 | Method | Endpoint | Role | Description |
 | --- | --- | --- | --- |
 | GET | `/healthz` | Public | Process health |
-| GET | `/readyz` | Public | Process readiness |
+| GET | `/readyz` | Public | Durable-store readiness (`503` after a persistent write fault); not end-to-end delivery |
 | GET | `/api/v1/me` | Any authenticated | Principal name, role, topic patterns |
 | GET | `/api/v1/topics` | Any authenticated | Topics visible to principal's read ACL |
 | POST | `/api/v1/topics/{topic}/messages` | Admin or publisher | Create a notification |

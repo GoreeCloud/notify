@@ -202,6 +202,14 @@ func (s *Store) Subscribe(topic, after string) ([]Message, chan Message, func())
 	}
 }
 
+// Healthy reports whether this instance can still accept durable writes.
+// Readiness is not a promise of end-to-end notification delivery.
+func (s *Store) Healthy() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.writeError == nil
+}
+
 func (s *Store) Stats() (messages int, active int, published uint64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

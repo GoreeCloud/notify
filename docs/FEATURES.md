@@ -12,7 +12,7 @@ This is the implementation status of the requested native GoreeCloud Notify plat
 | Title, body, priority, tags, clickable URL | **Implemented (alpha)** | Strict JSON validation |
 | Notification deduplication | **Implemented (alpha)** | Explicit persistent idempotency key |
 | Web notification dashboard | **Implemented (alpha)** | Native responsive browser UI; no OS push |
-| Health, readiness and metrics | **Implemented (alpha)** | Local endpoints |
+| Health, readiness and metrics | **Implemented (alpha)** | Process liveness; `503` on observed persistent-storage faults; admin metrics; not end-to-end delivery |
 | Container package, tests, CI definition | **Implemented (alpha)** | CI runtime results must be verified on GitHub |
 | Scheduled and recurring delivery | **Planned** | Persistent scheduler and cancellation |
 | Attachments and object storage | **Planned** | Authenticated media pipeline |

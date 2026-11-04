@@ -38,6 +38,10 @@ Failed compaction staging/rename preserves the old active writer. After an appen
 
 Take a verified backup before upgrading. Preserve the existing image or binary and configuration. Run Go tests and smoke tests against a staging instance. If a new version fails, stop it, restore the prior binary/image **and** known-compatible data snapshot, and verify access and event retrieval. No automated database schema migration exists in alpha.
 
+## Health and readiness
+
+`/healthz` remains a lightweight process-liveness response. `/readyz` returns HTTP 503 with `{"status":"unready"}` once a persistent append, file sync, or directory sync fault has been detected. Remove the instance from trusted ingress and recover from a verified snapshot; do not assume a passing readiness probe proves end-to-end delivery.
+
 ## Logs and troubleshooting
 
 `go run ./cmd/notify` emits server lifecycle logs. The API returns JSON errors. Missing or invalid tokens return 401; insufficient topic role returns 403. If login works but channels are empty, publish the first message or use a token with subscriber/admin privileges. SSE requires an HTTP proxy configured for streaming and low buffering. The `/metrics` endpoint requires the administrator token.
