@@ -9,7 +9,7 @@ GoreeCloud Notify is **not approved for internet-facing production traffic**. Th
 - [ ] Configure ingress limits for **trusted client source IPs**, including failed auth, connection counts, request rates, and burst traffic. Do not blindly trust incoming `Forwarded` or `X-Forwarded-For` headers.
 - [ ] Generate high-entropy admin and service tokens; never put secrets in source control, logs, URLs, browser persistence or chat transcripts. Configure least-privilege topic ACLs.
 - [ ] Confirm private filesystem ownership and modes: data dir `0700`, journal and `.notify.lock` `0600`; confirm a second service instance cannot open the same journal.
-- [ ] Restore a recent verified backup to an isolated test service and run `notifylog` on a quiesced copy. Check that the journal survives restart with expected event IDs and idempotency behavior.
+- [ ] Use `notifybackup` on a stopped process or consistent snapshot; keep the output under approved encrypted storage. Restore a recent verified backup to an isolated test service and run `notifylog` on a quiesced copy. Check that the journal survives restart with expected event IDs and idempotency behavior.
 - [ ] Run the repository's race-enabled tests, vet, build and container checks on the precise release commit. Complete abuse/threat review and browser/device testing.
 - [ ] Put independent alerts around Notify itself. Do not use Notify as its own only watchdog and do not depend on alpha Notify for safety-critical alerts.
 - [ ] Prepare a reversible, reviewed deployment/rollback plan with an intact prior binary/image and known-compatible snapshot. Record monitored acceptance criteria and fallback procedures.

@@ -9,7 +9,7 @@
 - Original Go service using **only the Go standard library** (no external server dependencies).
 - Authenticated JSON publish API, default-deny bearer-token authentication, role- and topic-scoped token hashes via optional ACL configuration; reject ambiguous authentication headers.
 - Bounded in-process peer throttling (240 requests or 30 failed authentications/minute per socket peer), separate from per-token publish limits and SSE budgets.
-- Durable, append-only local JSONL event storage; restart recovery; configurable retention and per-topic history limits; crash-conscious periodic compaction, fail-closed append errors, offline log verification, private journal permissions, and OS-enforced single-writer locking.
+- Durable, append-only local JSONL event storage; restart recovery; configurable retention and per-topic history limits; crash-conscious periodic compaction, fail-closed append errors, offline log verification, private journal permissions, OS-enforced single-writer locking, and an offline verified no-overwrite backup command.
 - Real-time Server-Sent Events (SSE) subscriptions with replay, bounded per-subscriber queues, and connection budgets (4 per credential, 64 total); JSON notification history and topic listing.
 - Five notification priorities, titles, tagged alerts, validated click-through links, and strict request validation.
 - Idempotent publishing keys with persistent conflict detection; stable random event identifiers.
@@ -60,6 +60,17 @@ go run ./cmd/notifylog -file ./data/messages.jsonl
 ```
 
 A malformed/truncated record or missing final newline prevents normal startup. **Never automatically truncate or repair this data**: preserve the original, identify the cause, then restore a verified backup or use a separately reviewed offline recovery process. See [operations](docs/OPERATIONS.md).
+
+## Verified offline backup (no live writers)
+
+Stop the service and confirm the source journal is quiescent, or use a point-in-time snapshot. Prepare an **independent private** destination directory (`chmod 0700 /secure/backups`) and use:
+
+```bash
+go run ./cmd/notifybackup -file ./data/messages.jsonl -out /secure/backups/notify-2026-11-03.jsonl
+# Outputs only record count, topic count, size, and SHA-256 digest.
+```
+
+The backup tool checks the journal's lock, verifies both copies, compares a second source hash, and publishes the backup atomically without overwriting prior backups. It does **not** encrypt files or certify backup retention. For a previously verified immutable snapshot lacking a lock file, use `-snapshot` explicitly. Always store backups in access-controlled encrypted storage; see [operations](docs/OPERATIONS.md).
 
 ## Documentation
 

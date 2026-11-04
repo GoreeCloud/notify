@@ -8,6 +8,7 @@
 - `internal/notify/store.go`: append-only JSONL persistence, in-memory topic indexes, idempotency and bounded subscriber fan-out, compacting retention, fail-closed storage writes, and read-only offline verification.
 - `internal/notify/http.go`: versioned HTTP API, SSE, admin metrics, strict bearer parsing.
 - `internal/notify/ratelimit.go`: fixed-window direct-peer request and invalid-auth throttling with bounded memory.
+- `internal/notify/backup.go`, `cmd/notifybackup`: offline, lock-checked, non-overwriting journal copy with integrity verification and destination fsync; encrypted backup storage remains the operator's responsibility.
 
 The initial persistence architecture is a single-instance event log protected by an OS advisory lock (`flock`) on the private `.notify.lock` file; a concurrent second writer fails startup. It is intentionally **not a distributed message broker**. Public multi-node clustering, active-active operation, end-to-end encryption, transport gateway integrations, attachments, scheduling, push to mobile OS, and identity federation are not yet implemented.
 
@@ -26,7 +27,7 @@ The initial persistence architecture is a single-instance event log protected by
 ### Important risks / alpha restrictions
 
 - TLS is **not** terminated by this service; remote deployment **requires** a trusted HTTPS reverse proxy or an appropriately restricted VPN.
-- Local JSONL messages are not encrypted at rest; full-disk encryption/secure host permissions are needed for sensitive workloads.
+- Local JSONL messages and CLI-generated backups are **not encrypted at rest**; full-disk encryption, access-controlled encrypted backup storage, and secure host permissions are needed for sensitive workloads. The backup tool cannot prove a claimed external snapshot was atomic.
 - SHA-256 hashes in the ACL file protect against direct plaintext exposure, but weak tokens are vulnerable to offline guessing. Always generate long random tokens.
 - ACL file is loaded at startup, not dynamically reloaded. Rotate and restart after editing it.
 - In-memory indexing currently requires memory proportional to retained messages. Only **one local writer** is supported, enforced by OS `flock`; this is not a distributed consensus lock and does not make shared/network filesystems safe. The locker is released on close or process exit.

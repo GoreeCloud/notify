@@ -28,14 +28,22 @@ Read README quickstart. Use a random admin secret; never commit `.env` or ACL fi
 - `Forwarded` and `X-Forwarded-For` are ignored for this throttle. With a reverse proxy, all clients may appear as one peer; enforce additional trusted **client-IP-aware** rate limits at the proxy/firewall before traffic reaches Notify. Failed-login suppression may impact legitimate users on shared networks; monitor local traffic while tuning ingress policy.
 - The limits reset on process restart, do not protect against distributed traffic, and are not production DDoS mitigation. Only local liveness/readiness are exempt from server peer limits.
 
-## Backup
+## Offline verified backup
 
-1. Quiesce publishing and stop the process (or take an atomic filesystem snapshot).
-2. Copy the private `NOTIFY_DATA_DIR/messages.jsonl` file, secrets managed externally, configuration and ACL file into access-controlled encrypted backup storage.
-3. Verify the backed-up log offline (`go run ./cmd/notifylog -file /path/to/snapshot/messages.jsonl`) and test restoration in a disposable environment. The verifier reports record count, topic count and file bytes only; it does not validate backup encryption, safe access, or application-level message delivery.
-4. Restore into a **stopped** process, with correct private permissions. Restart and verify `/readyz`, authenticated history and replay.
+1. Quiesce publishing and **stop** the process, or take a verified point-in-time filesystem snapshot. Never copy a moving JSONL journal and call it a successful backup. The backup tool attempts a non-blocking shared advisory lock and refuses access when a normal Notify writer is active.
+2. Prepare an **independent** private backup directory (`0700`) on a local filesystem with adequate capacity, protected by access controls and encryption appropriate to the notification data. The CLI output includes only record count, topic count, bytes and SHA-256 digest; it does not encrypt or upload data.
+3. Execute the tool against a stopped instance:
 
-Do not copy active JSONL files blindly while writes are happening; such copies can end with a partially written record. A partial record or a missing final newline causes startup to fail closed rather than silently drop data. Do not delete, trim, or repair a damaged original in place.
+   ```bash
+   go run ./cmd/notifybackup -file ./data/messages.jsonl -out /private/backup/notify-2026-11-03.jsonl
+   ```
+
+   For a separately verified **immutable** snapshot without `.notify.lock`, the explicit `-snapshot` option is required. Never use `-snapshot` to bypass an active service's lock.
+4. The tool checks the source format; writes a private temporary destination; syncs it; verifies its records/topics/size; compares the source hash again; and publishes the backup atomically without overwriting an existing path using an on-filesystem hard link followed by directory sync. The source file remains unchanged. If a sync operation fails, durability is uncertain: preserve and verify the result before retrying with a *new* destination name.
+5. Include application configuration and ACL secrets through **separate approved encrypted secret-backup processes**; the journal backup does not contain those external materials. Store the manifest/digest separately and protect backup access.
+6. Drill restoration into an isolated private directory with `0600` journal file, run `go run ./cmd/notifylog -file /path/to/restored/messages.jsonl`, start a fresh instance, and verify known IDs, idempotent replays and authenticated retrieval. Never restore over an active service's journal. Record the observed loss window.
+
+The tool is a local validated copy primitive, not a disaster recovery service: it cannot independently prove backup encryption, off-site replication, storage reliability, or snapshot consistency. Keep independent Notify-down monitoring and an operator-approved recovery plan.
 
 ## Persistence incident recovery
 
