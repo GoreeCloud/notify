@@ -52,3 +52,21 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew :app:assembleDebug --no-daemon
         working-directory: android
+
+  linux:
+    name: Qt Quick Linux build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt 6.12.0
+        uses: jurplel/install-qt-action@b344308e4483fc892e0d27b3cd1b173ebdd95f06
+        with:
+          version: "6.12.0"
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          cache: false
+      - name: Configure Qt Quick
+        run: cmake -S linux -B build/linux -DCMAKE_BUILD_TYPE=Release
+      - name: Compile native Linux client
+        run: cmake --build build/linux --parallel 2
