@@ -37,3 +37,5 @@ All API endpoints require `Authorization: Bearer <token>`. The server intentiona
 ## Delivery acceptance
 
 Currently: source with tested Go protocol paths, browser build and native-client source. To declare release readiness, require successful Linux Qt 6.12 build/runtime, Android APK/permission/background test, supported-browser accessibility test, HTTPS reverse proxy security test, journal recovery behavior, dependency/SBOM/license review, passing CI, protected main, and founder review. Record each independently, not as a single inferred green check.
+
+The pinned AndroidX 1.4.0 Material 3 compatibility shim does not yet enforce the upstream Expressive motion policy; test reduced-motion behavior before acceptance.

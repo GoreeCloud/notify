@@ -64,6 +64,7 @@ private fun paletteScheme(t: Map<String, Long>, dark: Boolean): ColorScheme {
  * preferences by the consuming application. No storage, network or tracking here.
  */
 @Composable
+@Suppress("UNUSED_PARAMETER")
 fun GoreeCloudExpressiveTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     accent: GoreeAccent = GoreeAccent.Iris,
@@ -91,7 +92,7 @@ fun GoreeCloudExpressiveTheme(
             colorScheme = scheme,
             typography = Typography(),
             shapes = GoreeShapes,
-            motionScheme = if (reduceMotion) MotionScheme.standard() else MotionScheme.expressive(),
+            // Material3 1.4.0 exposes MotionScheme only internally; motion support is pending.
             content = content
         )
     }

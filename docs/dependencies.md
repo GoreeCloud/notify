@@ -13,6 +13,8 @@ No upstream ntfy server or Android source was copied. ntfy API and documentation
 | Kotlin, Android Gradle plugin, AndroidX Compose Material 3 | https://developer.android.com/jetpack/compose | Kotlin Apache-2.0; AndroidX Apache-2.0; Google tooling has component-specific terms | Android native client |
 | Go standard library | https://go.dev/ | BSD-style Go license | Notification service |
 
+The vendored GC UI theme is minimally adapted to Material 3 1.4.0 for AGP 8.13 / compile SDK 36 by omitting the inaccessible internal `MotionScheme` parameter. Reduced-motion parity is pending; the original source remains credited to `gc-ui`.
+
 The Apache-2.0 license in the repository covers only original GoreeCloud-authored source. The MIT-licensed GoreeCloud UI snapshot remains MIT-licensed and retains its upstream notice. Runtime/framework licenses and required notices apply independently. Before distribution, perform a complete transitive-dependency and Gradle/Qt packaging review, including LGPLv3 dynamic linking and relinking obligations.
 
 ## Compatibility research
