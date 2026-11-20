@@ -1,0 +1,27 @@
+# Secrets and private notifications
+.env
+.env.*
+!.env.example
+data/
+*.jsonl
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+secrets/
+
+# Development products
+build/
+dist/
+web/dist/
+web/node_modules/
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/**/build/
+.gradle/
+.idea/
+.vscode/
+*.iml
+.DS_Store
