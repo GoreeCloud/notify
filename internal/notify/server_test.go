@@ -1,13 +1,16 @@
 package notify
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 const testToken = "test-token-please-replace-this-1234567890"
@@ -143,4 +146,51 @@ func TestTokenMinimumAndFilePermissions(t *testing.T) {
 	if bytes.Contains([]byte(strings.Join([]string{s.path}, "")), []byte(testToken)) {
 		t.Fatal("test token in storage path")
 	}
+}
+
+func TestLiveSSEDelivery(t *testing.T) {
+	server, _ := newTestServer(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/api/v1/topics/system/events", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Authorization", "Bearer "+testToken)
+	response, err := server.Client().Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK || !strings.HasPrefix(response.Header.Get("Content-Type"), "text/event-stream") {
+		t.Fatalf("unexpected SSE response: %d", response.StatusCode)
+	}
+	scanner := bufio.NewScanner(response.Body)
+	if !scanner.Scan() || scanner.Text() != ": connected" {
+		t.Fatal("missing stream handshake")
+	}
+	published := requestForSSE(t, server)
+	if published.StatusCode != http.StatusCreated {
+		t.Fatalf("unexpected publish: %d", published.StatusCode)
+	}
+	published.Body.Close()
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "data: ") {
+			var m Message
+			if err := json.Unmarshal([]byte(strings.TrimPrefix(line, "data: ")), &m); err != nil {
+				t.Fatal(err)
+			}
+			if m.Topic != "system" || m.Body != "Streaming test message" {
+				t.Fatalf("wrong topic or body: %+v", m)
+			}
+			return
+		}
+	}
+	t.Fatalf("no SSE message received: %v", scanner.Err())
+}
+
+func requestForSSE(t *testing.T, server *httptest.Server) *http.Response {
+	t.Helper()
+	return request(t, server, "POST", "/api/v1/topics/system/messages", `{"body":"Streaming test message"}`, testToken)
 }
